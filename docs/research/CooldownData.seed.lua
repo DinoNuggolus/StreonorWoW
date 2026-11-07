@@ -1,4 +1,4 @@
-﻿-- SEED DATA from docs/research/consumable-cooldowns.md (Classic references, all verified=false).
+-- SEED DATA from docs/research/consumable-cooldowns.md (Classic references, all verified=false).
 -- 'shared' = pool label: groups with the same non-nil label share ONE timer. duration 0 = no item cooldown; nil = unknown.
 ns.CooldownGroups = {
   health_potion = { name = "Health potions", duration = 120, shared = "potion", verified = false, source = "https://classicdb.ch/?item=13446" },
