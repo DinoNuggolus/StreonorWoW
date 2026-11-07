@@ -22,11 +22,24 @@ The user wants a WoW: Forever druid controlled from the Streonor S15: each of th
 - `Core.lua` pure logic (slot model, validation, export builder); no WoW calls, unit-testable outside the game.
 - `Panel.lua` UI and drag/drop; `Secure.lua` buttons + bindings (combat-lockdown aware); `Export.lua` collects unrestricted values into the DB; `Init.lua` events and slash.
 
+## Constraints from the user's Forever addon rules (added 2026-11-07, see `../../../docs/forever-addon-rules/`)
+- Lua **5.1** only (no `goto`, `//`, bitwise ops, `_ENV`, `io`, `os`, `require`). Load order = TOC. Every file starts `local addonName, ns = ...`; shared state on `ns`.
+- TOC: `## Interface: 16001`, Title, Notes, Author, Version, `SavedVariables: StreonorDockDB`, Category, IconTexture; Addon Compartment entry optional (untested on Forever).
+- `StreonorDockDB` is created/merged onto defaults **only inside `ADDON_LOADED`** for this addon. One event frame + handler table, no `OnUpdate` polling.
+- Spell/item data: `C_Spell.GetSpellInfo` (returns a table) and `C_Item.GetItemInfo`; both may return nil until cached -> call the `Request...` loader and wait for `SPELL_DATA_LOAD_RESULT` / `ITEM_DATA_LOAD_RESULT`. Slot icons may therefore fill in late; export stores `iconFileID` only once known.
+- **Secret values**: guard with `issecretvalue` before storing, branching or exporting. The export builder drops (sets nil) any secret field instead of erroring; secret values are never written to SavedVariables.
+- **No combat log, no secure snippets** (snippet compilation was reported broken). Our secure buttons use plain `type`/`spell`/`item` attributes only. Override-binding behavior is **not covered** by the guides: add an in-game capability probe (`/sdock probe`) for `SetOverrideBindingClick`, `GetBindingAction`, `C_Spell`/`C_Item` presence, `issecretvalue`; fallback is BindPad-style `SetBinding` to a `CLICK` action.
+- Do not call protected chat/waypoint functions or touch Blizzard unit frames. "Skin and inform": one press = one action, no automation.
+- Combat: `InCombatLockdown()` check before showing/hiding/moving/binding; queue closures to `PLAYER_REGEN_ENABLED`.
+- Slash command `/sdock` with help text. A Settings-API options panel is deferred to v1.1.
+- Install target here is `G:\World of Warcraft\_forever_\Interface\AddOns\StreonorDock\` (live client 1.60.1.70790), via `scripts\deploy.ps1`; the guides' beta path `_classic_beta_` does not apply. The guides' notes were taken on older builds, so every claim above gets retested on this build.
+- Deliver with the addon: the list of lines to retest if the interface number moves off 16001.
+
 ## Decisions needed from the user
 1. **Default chords** (proposal, untested): Ctrl+Shift + `1 2 3 4 5 6 7 8 9 0 - = [ ] \`. Must be audited for conflicts (BindPad, Windows hotkeys, Scimitar numpad mappings) and the device must send them; F13-F24 are reported not to work in Forever. Alternative: any set you prefer.
 2. **Per-character layout** (recommended, since this is for the druid) vs account-wide.
 3. **v1 = one page of 15 slots**; druid form/page switching deferred. OK?
-4. **Lua tooling**: no Lua runtime is installed. Proposal: install Lua 5.4 via winget so `luac` can syntax-check and Core.lua can have real tests. (Approval needed for the download.)
+4. **Lua tooling**: no Lua runtime is installed. The client is Lua **5.1**, so the proposal is a Lua 5.1-compatible interpreter (LuaJIT, or Lua 5.1 binaries) so `luac -p`/syntax checks and Core.lua tests match the game; Lua 5.4 would accept code the client rejects. (Approval needed for the download; I'd first look for an official winget package.)
 
 ## Testing
 - TDD for `Core.lua` with plain Lua tests (needs decision 4).
@@ -34,4 +47,4 @@ The user wants a WoW: Forever druid controlled from the Streonor S15: each of th
 - Deploy only via `scripts\deploy.ps1`; verify no errors in the Lua error frame.
 
 ## Risks
-Unknown API differences on this custom client (verify with `/dump`), chord not delivered by the device, secure-attribute behavior for druid-form spells, SavedVariables write timing (snapshot only).
+Unknown API differences on this custom client (verify with `/dump` and `/sdock probe`), override bindings uncovered by the guides, chord not delivered by the device, secure-attribute behavior for druid-form spells, SavedVariables write timing and the reported beta persistence bug (snapshot only; tell the user it may be the client if data does not persist).
