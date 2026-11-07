@@ -63,3 +63,20 @@ The user wants a WoW: Forever druid controlled from the Streonor S15: each of th
 
 ## Risks
 Unknown API differences on this custom client (verify with `/dump` and `/sdock probe`), override bindings uncovered by the guides, chord not delivered by the device, secure-attribute behavior for druid-form spells, SavedVariables write timing and the reported beta persistence bug (snapshot only; tell the user it may be the client if data does not persist).
+
+## Resolved decisions and amendments (2026-11-07, supersede earlier text where they conflict)
+Approved by the user in chat: Set B chords; manual out-of-combat pages; build the 3 readout (strip) slots now but leave them unpopulated.
+
+1. **Chords (final)**: `ALT-CTRL-SHIFT-` + `1 2 3 4 5 6 7 8 9 0 - = [ ] \` for key slots 1..15. Audit: no overlap with Skyir's old bindings (`docs/skyir-keybind-audit.md`). Still verified in game via `/sdock chords` (effective overrides + ordinary bindings).
+2. **Pages in v1**: yes. Max 10 pages per character. Previous at page 1 stays on page 1; next past the last existing page creates a fresh page up to the max; home = page 1. Page changes are blocked in combat (message printed). Pager keys are Blizzard key bindings (`Bindings.xml`). Spec lines saying "v1 = one page" are void.
+3. **Identity**: no character names in the export (unit names can be sealed). Layouts live in `SavedVariablesPerCharacter: StreonorDockCharDB`; each character gets a random opaque `profileId`. The account-wide `StreonorDockDB.export` holds the last-saved character's snapshot: `{schema, profileId, revision, savedAt (server time), page={index,count}, slots[1..15], readouts[1..3]}`. Empty slot = `{kind="empty"}`. The plugin must label the controller as "saved snapshot" and show age; icons may lag edits until `/reload`/logout (accepted).
+4. **Sanitizing**: the WoW adapter (`Export.lua`) strips/guards secret values with `issecretvalue` BEFORE calling Core; Core never sees a secret and never calls WoW APIs (injected `now`, `issecret` predicate and data-provider tables). If a reading becomes unavailable its field is removed (not kept stale).
+5. **Binding mechanism**: only temporary override bindings (`SetOverrideBindingClick`) in v1. The `SetBinding`/`SaveBindings` fallback is NOT used silently; if overrides fail the probe reports it and stops. Secure buttons must call `RegisterForClicks` per `ActionButtonUseKeyDown`, clear stale attributes when a slot's kind changes, and right-click clearing must not fire the action.
+6. **Readout slots (3 per page, strip)**: each readout is `empty` or `{kind="item", itemID}`; drag an item from a bag onto the slot (out of combat), right-click clears. Unpopulated by default. Display = icon + item count + cooldown.
+7. **Item cooldown display (internal timer)**:
+   - Primary: read `C_Item.GetItemCooldown(itemID)` (start, duration); when plain and duration > 1.5 s, record `endsAt = start + duration` and **learn** the item's cooldown length.
+   - Fallback when the API gives nothing/secret (combat): if the item was ready and a use is detected (`BAG_UPDATE_COOLDOWN` with sealed data, or a press of a key slot holding the same item), start an internal timer `endsAt = now + learnedDuration`. If the length is not yet learned, show "CD ?" and learn on the next readable observation.
+   - Always label source: `game` vs `est` (estimate). Never claimed exact. Spell cooldowns are NOT supported (sealed) and not attempted.
+   - Pure logic in Core (`CooldownTracker`, injected `now`); WoW event wiring in the adapter.
+8. **Live countdown limit**: the in-game readout shows the live countdown; the exported snapshot carries `endsAt`/`source` and only updates on save, so the controller cannot show a live countdown until a live route exists.
+9. **Codex review items adopted**: export includes `schema`, `revision`, `page`, stable empty slots, time units (server seconds); refresh on assignment, page change, login and logout; late metadata callbacks must not overwrite a reassigned slot (match by current slot identity).
