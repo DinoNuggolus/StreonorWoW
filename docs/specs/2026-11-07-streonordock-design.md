@@ -21,7 +21,7 @@ The user wants a WoW: Forever druid controlled from the Streonor S15: each of th
 2. **Assign**: drag a spell (spellbook) or item (bag) onto a slot out of combat; stores kind + id; right-click clears. Combat: edits disabled, queued assignments not supported in v1.
 3. **Fire**: each slot is a `SecureActionButtonTemplate` button (`type=spell` by name / `type=item` by `item:<id>`), so the key press runs the real action through Blizzard's secure path.
 4. **Bindings**: per-slot chord applied with override bindings (`SetOverrideBindingClick`) on login and after combat. Override bindings are not written to `bindings-cache.wtf`, so no WTF files are edited. Before binding, the addon warns in chat if a chord already maps to another action.
-5. **Export**: `StreonorDockDB` holds, per character, `export = { version, character, realm, time, slots[1..15]={kind,id,name,iconFileID,chord,count}, player={gold,freeSlots} }`. Values refresh in memory on bag/money events; the game writes them to disk at `/reload`, logout or exit. The plugin treats data older than a threshold as stale.
+5. **Export**: `StreonorDockDB` holds, per character, `export = { version, character, realm, time, slots[1..15]={kind,id,name,iconFileID,chord,count}, player={gold,freeSlots}, panels[1..3]={metric,itemID,value} }`. Values refresh in memory on bag/money events; the game writes them to disk at `/reload`, logout or exit. The plugin treats data older than a threshold as stale.
 6. **Never exported**: spell cooldowns/charges or any value the API marks secret. Item `count`, gold and free slots are ordinary values (to be confirmed in game, in and out of combat).
 7. **Slash**: `/sdock` toggles panel, `/sdock export` reminds to `/reload`, `/sdock chords` lists chords and conflicts.
 
