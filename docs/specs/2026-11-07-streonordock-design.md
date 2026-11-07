@@ -16,6 +16,13 @@ The user wants a WoW: Forever druid controlled from the Streonor S15: each of th
 - **WoW panel metrics (only ordinary, non-secret values)**: gold, free bag slots, count of a dragged item, later maybe durability / currency. Never cooldowns, health, names or any value `issecretvalue` flags. In the addon, a small 3-slot "readout" row (list of metrics + drag an item for its count) sets `panels[1..3]`.
 - **Honest limit**: with the snapshot (SavedVariables) route, WoW panel values are only as fresh as the last `/reload`/logout, and the plugin shows their age/STALE. Useful live panels need the deferred live bridge. So system-metric panels are the practical default for the strip until that is decided.
 
+## Pages (user direction, 2026-11-07)
+- Each character has an ordered list of **pages**. A page = 15 key slots + 3 readout slots = 18 slots (user said "18 slot pages"; assumed to mean this).
+- **Paging**: next, previous, and home (page 1). A page never visited is created fresh (empty); a visited page returns exactly as left. Pages persist per character in `StreonorDockDB`.
+- **Binding the pager**: next/prev/home are registered as Blizzard key bindings (`Bindings.xml`, shown under the addon's header in the game's Key Bindings screen; BindPad already ships one on this client), so the user picks the keys there, and they can also be set from the addon's own menu via the same binding API.
+- **Combat limit (important)**: swapping which spell/item the 15 secure buttons hold rewrites secure attributes, which is blocked in combat, and secure snippets (the usual workaround) are reported broken. So **paging works out of combat only** in v1; in combat the pager prints "paging unavailable in combat". If mid-combat paging matters (druid forms), it needs a separate design (e.g. one page per fixed chord set), and we'd want a capability probe of secure state handling first.
+- The export carries only the **current page** plus `page={index,count}`; the chords stay the same (chord N = slot N of the current page), so the Streonor buttons never change. The plugin may show the page number on a strip panel or key overlay.
+
 ## Behavior
 1. **Panel**: movable frame, 3 columns x 5 rows (mirrors the device grid: rows 0-4, cols 0-2). Slot N maps to device key N (row-major).
 2. **Assign**: drag a spell (spellbook) or item (bag) onto a slot out of combat; stores kind + id; right-click clears. Combat: edits disabled, queued assignments not supported in v1.
