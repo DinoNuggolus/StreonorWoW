@@ -1,0 +1,348 @@
+{
+  "SDKVersion": 1,
+  "Author": "DinoNuggolus",
+  "Name": "StreonorDock",
+  "Icon": "images/icon.png",
+  "Category": "StreonorDock",
+  "CategoryIcon": "images/icon.png",
+  "Description": "15 fixed WoW chords and saved snapshot item displays.",
+  "Version": "0.1.0",
+  "CodePathWin": "plugin/index.js",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Software": {
+    "MinimumVersion": "3.10.188.226"
+  },
+  "Nodejs": {
+    "Version": "20"
+  },
+  "Actions": [
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key1",
+      "Name": "Dock Key 1",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key2",
+      "Name": "Dock Key 2",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key3",
+      "Name": "Dock Key 3",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key4",
+      "Name": "Dock Key 4",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key5",
+      "Name": "Dock Key 5",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key6",
+      "Name": "Dock Key 6",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key7",
+      "Name": "Dock Key 7",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key8",
+      "Name": "Dock Key 8",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key9",
+      "Name": "Dock Key 9",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key10",
+      "Name": "Dock Key 10",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key11",
+      "Name": "Dock Key 11",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key12",
+      "Name": "Dock Key 12",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key13",
+      "Name": "Dock Key 13",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key14",
+      "Name": "Dock Key 14",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.key15",
+      "Name": "Dock Key 15",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.readout1",
+      "Name": "Dock Readout 1",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Information"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Saved item snapshot. Display only."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.readout2",
+      "Name": "Dock Readout 2",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Information"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Saved item snapshot. Display only."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.readout3",
+      "Name": "Dock Readout 3",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Information"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Saved item snapshot. Display only."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.streonordock.status",
+      "Name": "Dock Status",
+      "Icon": "images/icon.png",
+      "Controllers": [
+        "Information"
+      ],
+      "States": [
+        {
+          "Image": "images/icon.png",
+          "ShowTitle": false
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Saved snapshot page and age; replaces one readout on the S15."
+    }
+  ]
+}
