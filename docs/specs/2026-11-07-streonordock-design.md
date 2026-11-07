@@ -9,6 +9,13 @@ The user wants a WoW: Forever druid controlled from the Streonor S15: each of th
 **In:** the WoW addon `StreonorDock` (own repo, `type: original`, private).
 **Out (separate sub-projects, each gets its own spec):** the Streonor plugin that reads the export and draws keys/panels; the live bridge (chat-log tail or pixel strip); druid form/page logic; the key-sending profile in Streonor.
 
+## Controller contract (user direction, 2026-11-07)
+- **Character profiles live in the addon** (`StreonorDockDB`, per character). The Streonor side is profile-agnostic: key N always sends chord N, whatever character or spec is active.
+- **Keys**: 15 fixed plugin actions (`Dock Key 1..15`). Each draws the icon/count the export gives for slot N and, on a physical press, sends only its chord (focus-guarded, one press = one chord, reusing the held-key checks of the user's existing `bridge.ps1`). The plugin picks the export of the most recently saved character (newest `export.time`).
+- **Strip**: 3 display-only slots (`5,0` `5,1` `5,2`, Information panels). Each panel is one of: (a) a WoW value chosen in the addon, or (b) a stock Streonor system-monitor widget (GPU temp, RAM, ...), swappable in the Streonor app at any time with no addon involvement.
+- **WoW panel metrics (only ordinary, non-secret values)**: gold, free bag slots, count of a dragged item, later maybe durability / currency. Never cooldowns, health, names or any value `issecretvalue` flags. In the addon, a small 3-slot "readout" row (list of metrics + drag an item for its count) sets `panels[1..3]`.
+- **Honest limit**: with the snapshot (SavedVariables) route, WoW panel values are only as fresh as the last `/reload`/logout, and the plugin shows their age/STALE. Useful live panels need the deferred live bridge. So system-metric panels are the practical default for the strip until that is decided.
+
 ## Behavior
 1. **Panel**: movable frame, 3 columns x 5 rows (mirrors the device grid: rows 0-4, cols 0-2). Slot N maps to device key N (row-major).
 2. **Assign**: drag a spell (spellbook) or item (bag) onto a slot out of combat; stores kind + id; right-click clears. Combat: edits disabled, queued assignments not supported in v1.
@@ -37,8 +44,9 @@ The user wants a WoW: Forever druid controlled from the Streonor S15: each of th
 
 ## Decisions needed from the user
 1. **Default chords** (proposal, untested): Ctrl+Shift + `1 2 3 4 5 6 7 8 9 0 - = [ ] \`. Must be audited for conflicts (BindPad, Windows hotkeys, Scimitar numpad mappings) and the device must send them; F13-F24 are reported not to work in Forever. Alternative: any set you prefer.
-2. **Per-character layout** (recommended, since this is for the druid) vs account-wide.
-3. **v1 = one page of 15 slots**; druid form/page switching deferred. OK?
+2. ~~Per-character layout~~ **Decided**: profiles are baked into the addon, per character; Streonor buttons are fixed.
+3. **v1 = one page of 15 slots** (druid form/page switching deferred). Implied by the above; say if not.
+3b. **Strip v1**: ship system-metric panels (GPU/RAM) from the Streonor app first, and add WoW-value panels once live data exists? (Recommended.)
 4. **Lua tooling**: no Lua runtime is installed. The client is Lua **5.1**, so the proposal is a Lua 5.1-compatible interpreter (LuaJIT, or Lua 5.1 binaries) so `luac -p`/syntax checks and Core.lua tests match the game; Lua 5.4 would accept code the client rejects. (Approval needed for the download; I'd first look for an official winget package.)
 
 ## Testing
