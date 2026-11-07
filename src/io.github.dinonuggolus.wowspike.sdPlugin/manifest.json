@@ -1,0 +1,36 @@
+{
+  "SDKVersion": 1,
+  "Author": "DinoNuggolus",
+  "Name": "WoW Spike (throwaway)",
+  "Icon": "images/icon.png",
+  "Category": "WoW Spike",
+  "CategoryIcon": "images/icon.png",
+  "Description": "Feasibility spike: one key, one Information panel fed from a state file. Sends no keystrokes.",
+  "Version": "0.0.1",
+  "CodePathWin": "plugin/index.js",
+  "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
+  "Software": { "MinimumVersion": "3.10.188.226" },
+  "Nodejs": { "Version": "20" },
+  "Actions": [
+    {
+      "UUID": "io.github.dinonuggolus.wowspike.key",
+      "Name": "Spike Key",
+      "Icon": "images/icon.png",
+      "Controllers": ["Keypad"],
+      "States": [{ "Image": "images/icon.png", "ShowTitle": false }],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Draws an icon and counts presses. Sends no key."
+    },
+    {
+      "UUID": "io.github.dinonuggolus.wowspike.panel",
+      "Name": "Spike Panel (gold / bags)",
+      "Icon": "images/icon.png",
+      "Controllers": ["Information"],
+      "States": [{ "Image": "images/icon.png", "ShowTitle": false }],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "Tooltip": "Shows gold and free bag slots from state/state.json."
+    }
+  ]
+}
