@@ -44,12 +44,12 @@ test('check-icons reports present, missing and fallback-dir icons for an export'
  const d=await mk(t,'tmp-chk-'),main=path.join(d,'main'),old=path.join(d,'old');await fs.mkdir(main);await fs.mkdir(old);
  await fs.writeFile(path.join(main,'111.png'),'x');await fs.writeFile(path.join(old,'222.png'),'x');
  const f=path.join(d,'StreonorDock.lua');
- await fs.writeFile(f,'StreonorDockDB={export={slots={[1]={kind="spell",name="A",iconFileID=111},[2]={kind="item",name="B",iconFileID=222},[3]={kind="item",name="C",iconFileID=333},[4]={kind="empty"}},readouts={[1]={kind="item",name="D"}}}}');
+ await fs.writeFile(f,'StreonorDockDB={export={schemaVersion=2,enabled=true,profileId="p",page=1,icons={[1]={iconFileID=111},[2]={iconFileID=222},[3]={iconFileID=333},[4]={},[5]={unresolved=true}}}}');
  const rows=check(f,[main,old]);
- a.deepEqual(rows.map(r=>[r.where,!!r.file]),[['slot 1',true],['slot 2',true],['slot 3',false],['readout 1',false]]);
+ a.deepEqual(rows.map(r=>[r.where,!!r.file]),[['key 1',true],['key 2',true],['key 3',false]]);
 });
 
-test('runtime flow: export rewrite -> plugin re-reads slots -> icon looked up by iconFileID in library (+fallback dir) -> missing ID gives text tile; no network',{timeout:40000},async t=>{
+test('runtime flow: export rewrite -> plugin re-reads slots -> icon looked up by iconFileID in library (+fallback dir) -> missing ID gives question glyph; no network',{timeout:40000},async t=>{
  const d=await mk(t,'tmp-flow-'),library=path.join(d,'library'),old=path.join(d,'old');await fs.mkdir(library);await fs.mkdir(old);
  const file=path.join(d,'StreonorDock.lua'),cfg=path.join(d,'config.json');
  const fixture=await fs.readFile(path.join(__dirname,'fixtures/StreonorDock.lua'),'utf8');await fs.writeFile(file,fixture);
@@ -70,17 +70,17 @@ test('runtime flow: export rewrite -> plugin re-reads slots -> icon looked up by
  const k2=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&svg(m).includes(b64(C))));
  a.ok(k2.includes(b64(C)),'slot 2 shows fallback-dir icon 134829');
  // /reload: addon writes a new export. Slot 1 now holds a new spell with icon 999001; slot 2 a never-seen ID.
- await fs.writeFile(file,fixture.replace('["name"]="Moonfire", ["iconFileID"]=136096','["name"]="NewSpell", ["iconFileID"]=999001').replace('["iconFileID"]=134829, ["chord"]','["iconFileID"]=777777, ["chord"]'));
+ await fs.writeFile(file,fixture.replace('136096','999001').replace('134829','777777'));
  const n1=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&svg(m).includes(b64(B))));
  a.ok(n1.includes(b64(B))&&!n1.includes(b64(A)),'slot 1 switched to the new library icon');
- const n2=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&svg(m).includes('>MH<')));
- a.ok(!n2.includes('<image'));a.match(n2,/<rect/);a.ok(!n2.includes(b64(C)));   // missing icon -> text tile
+ const n2=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&svg(m).includes('<path ')));
+ a.ok(!n2.includes('<image'));a.ok(!n2.includes('<text'));a.ok(!n2.includes(b64(C)));   // missing icon -> question glyph
  a.equal(stderr,'');
 });
 
 test('shipped plugin never touches the network and reads icons only from configured local dirs',async()=>{
  const root=path.join(__dirname,'..','src','io.github.dinonuggolus.streonordock.sdPlugin');
- for(const f of ['lib/icons.js','lib/render.js','plugin/index.js']){const code=await fs.readFile(path.join(root,f),'utf8');
+ for(const f of ['lib/icons.js','lib/render.js','lib/exportReader.js','plugin/index.js']){const code=await fs.readFile(path.join(root,f),'utf8');
   a.doesNotMatch(code,/require\(['"]node:(https?|net|dns|dgram|tls)['"]\)|require\(['"](https?|net|dns)['"]\)|fetch\(|XMLHttpRequest/,f);}
  const cfg=JSON.parse(await fs.readFile(path.join(root,'plugin','config.json'),'utf8'));
  a.match(cfg.iconDir,/icon-library-144$/);const fb=cfg.iconFallbackDirs.map(x=>path.win32.basename(x));a.deepEqual(fb.slice(0,2),['icon-library','icon-cache']);   // order: 144 px, 72 px, old cache

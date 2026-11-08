@@ -5,7 +5,7 @@
   "Icon": "images/icon.png",
   "Category": "StreonorDock",
   "CategoryIcon": "images/icon.png",
-  "Description": "15 fixed WoW chords and item icon and cooldown displays.",
+  "Description": "15 fixed WoW chords with full-key icons from the StreonorDock addon export.",
   "Version": "0.1.0",
   "CodePathWin": "plugin/index.js",
   "OS": [
@@ -36,7 +36,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key2",
@@ -53,7 +53,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key3",
@@ -70,7 +70,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key4",
@@ -87,7 +87,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key5",
@@ -104,7 +104,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key6",
@@ -121,7 +121,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key7",
@@ -138,7 +138,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key8",
@@ -155,7 +155,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key9",
@@ -172,7 +172,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key10",
@@ -189,7 +189,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key11",
@@ -206,7 +206,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key12",
@@ -223,7 +223,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key13",
@@ -240,7 +240,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key14",
@@ -257,7 +257,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key15",
@@ -274,75 +274,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
-    },
-    {
-      "UUID": "io.github.dinonuggolus.streonordock.readout1",
-      "Name": "Dock Readout 1",
-      "Icon": "images/icon.png",
-      "Controllers": [
-        "Information"
-      ],
-      "States": [
-        {
-          "Image": "images/icon.png",
-          "ShowTitle": false
-        }
-      ],
-      "SupportedInMultiActions": false,
-      "UserTitleEnabled": false,
-      "Tooltip": "Item icon and cooldown from saved addon data. Display only."
-    },
-    {
-      "UUID": "io.github.dinonuggolus.streonordock.readout2",
-      "Name": "Dock Readout 2",
-      "Icon": "images/icon.png",
-      "Controllers": [
-        "Information"
-      ],
-      "States": [
-        {
-          "Image": "images/icon.png",
-          "ShowTitle": false
-        }
-      ],
-      "SupportedInMultiActions": false,
-      "UserTitleEnabled": false,
-      "Tooltip": "Item icon and cooldown from saved addon data. Display only."
-    },
-    {
-      "UUID": "io.github.dinonuggolus.streonordock.readout3",
-      "Name": "Dock Readout 3",
-      "Icon": "images/icon.png",
-      "Controllers": [
-        "Information"
-      ],
-      "States": [
-        {
-          "Image": "images/icon.png",
-          "ShowTitle": false
-        }
-      ],
-      "SupportedInMultiActions": false,
-      "UserTitleEnabled": false,
-      "Tooltip": "Item icon and cooldown from saved addon data. Display only."
-    },
-    {
-      "UUID": "io.github.dinonuggolus.streonordock.status",
-      "Name": "Dock Status",
-      "Icon": "images/icon.png",
-      "Controllers": [
-        "Information"
-      ],
-      "States": [
-        {
-          "Image": "images/icon.png",
-          "ShowTitle": false
-        }
-      ],
-      "SupportedInMultiActions": false,
-      "UserTitleEnabled": false,
-      "Tooltip": "StreonorDock page; replaces one readout on the S15."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; the key shows the addon's icon for this slot."
     }
   ]
 }

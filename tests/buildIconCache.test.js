@@ -16,7 +16,7 @@ function tmp(t){const d=fs.mkdtempSync(path.join(os.tmpdir(),'icache-'));t.after
 
 test('export IDs are collected from every page/table, ignoring invalid values',t=>{
  const d=tmp(t),f=path.join(d,'StreonorDock.lua');
- fs.writeFileSync(f,'StreonorDockDB={export={slots={[1]={kind="spell",iconFileID=111},[2]={kind="item",iconFileID=222}},readouts={[1]={iconFileID=333}}},other={deep={iconFileID=444,bad={iconFileID=-5}},x={iconFileID="9"}}}');
+ fs.writeFileSync(f,'StreonorDockDB={export={icons={[1]={iconFileID=111},[2]={iconFileID=222}},slots={[1]={iconFileID=333}}},other={deep={iconFileID=444,bad={iconFileID=-5}},x={iconFileID="9"}}}');
  a.deepEqual([...idsFromExport(f)].sort((x,y)=>x-y),[111,222,333,444]);
  a.ok(idsFromExport(fixture).size>=1);
 });
@@ -65,9 +65,8 @@ test('cached 256x256 PNG is accepted by the plugin IconResolver (no downscale ne
  const d=tmp(t),pack=path.join(d,'pack'),cache=path.join(d,'cache');fs.mkdirSync(pack);
  const bytes=png(256,9);a.ok(bytes.length<MAX_ICON_BYTES);fs.writeFileSync(path.join(pack,'42.png'),bytes);
  const ids=path.join(d,'ids.txt');fs.writeFileSync(ids,'42');build({pack,cache,idsFile:ids});
- const svg=new IconResolver({iconDir:cache}).resolve({iconFileID:42,name:'X'});
- a.match(svg,/^<image .*href="data:image\/png;base64,/);
- a.match(new IconResolver({iconDir:cache}).resolve({iconFileID:43,name:'Zed'}),/<rect/);
+ a.match(new IconResolver({iconDir:cache}).uri({iconFileID:42}),/^data:image\/png;base64,/);
+ a.equal(new IconResolver({iconDir:cache}).uri({iconFileID:43}),null);
 });
 
 test('argument parsing rejects unknown flags and missing values',()=>{

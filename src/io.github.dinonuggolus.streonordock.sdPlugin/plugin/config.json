@@ -5,10 +5,6 @@
   "embedIcons": true,
   "gameProcess": "Wow.exe",
   "fireOn": "press",
-  "deleteLogsOnLogout": true,
-  "liveEstimates": true,
-  "showEstimateMarker": false,
-  "logDir": "",
   "iconFallbackDirs": [
     "G:\\WoWFOREVER_ADDONS\\StreonorWoW\\icon-library",
     "G:\\WoWFOREVER_ADDONS\\StreonorWoW\\icon-cache"

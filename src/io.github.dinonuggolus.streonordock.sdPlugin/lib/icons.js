@@ -5,18 +5,6 @@ const MAX_ICON_BYTES=512*1024;
 // seen to blank tiles (text included) when it is large. Build scripts make 144 px palette PNGs (~11 KB,
 // hard cap 20 KB) and a 72 px fallback set (< 12 KB). Over-cap files are skipped and the next dir is tried.
 const MAX_EMBED_BYTES=20*1024;
-const esc=v=>(typeof v==='string'?v:'').slice(0,100).replace(/[\x00-\x1f\x7f]/g,'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
-function nameParts(name){
- name=typeof name==='string'?name.slice(0,100):'?';let h=2166136261;for(const c of name)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;
- const initials=name.trim().split(/\s+/).slice(0,2).map(w=>Array.from(w)[0]||'').join('').toUpperCase()||'?';
- return {h,initials};
-}
-// Full-bleed tile for a filled slot whose icon is missing: plain colour + initials (the only text a key may show).
-function fallbackTile(name){const {h,initials}=nameParts(name);return `<rect width="144" height="144" fill="hsl(${h%360},45%,30%)"/><text x="72" y="92" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="56" fill="white">${esc(initials)}</text>`;}
-function fallback(name){
- const {h,initials}=nameParts(name);
- return `<rect x="8" y="20" width="128" height="88" rx="16" fill="hsl(${h%360},45%,30%)"/><text x="72" y="78" text-anchor="middle" font-size="34" fill="white">${esc(initials)}</text>`;
-}
 // Local SVG uses a deliberately small inert shape subset. No scripts, CSS, entities,
 // images, links, external references or foreign content (including encoded hrefs).
 function safeSvg(text){
@@ -26,12 +14,9 @@ function safeSvg(text){
   !/\b(?:on\w+|href|style|src)\s*=/i.test(tag)&&
   !/(?:https?:|file:|data:)/i.test(tag.replace(/xmlns\s*=\s*["']http:\/\/www\.w3\.org\/2000\/svg["']/g,'')));
 }
-// xlink:href (with xmlns:xlink on the root) is understood by every SVG renderer, including strict SVG 1.1/Tiny ones that ignore plain href.
-const image=uri=>`<image x="8" y="20" width="128" height="88" xlink:href="${uri}"/>`;
 class IconResolver{
  constructor(config={},sources=[],onSkip=()=>{}){this.dir=config.iconDir||path.join(__dirname,'..','icons');this.dirs=[this.dir,...(Array.isArray(config.iconFallbackDirs)?config.iconFallbackDirs.filter(d=>typeof d==='string'&&d):[])];this.sources=sources;this.enabled=config.embedIcons!==false;this.onSkip=onSkip;}
  skip(slot,reason,bytes){try{this.onSkip({id:slot.iconFileID,reason,bytes});}catch{}}
- resolve(slot={}){const uri=this.uri(slot);return uri?image(uri):fallback(slot.name);}
  // Data URI of the first usable icon: sources, then each dir in order (144 px set, 72 px set, old cache). null = none.
  uri(slot={}){
   if(!this.enabled)return null;
@@ -49,4 +34,4 @@ class IconResolver{
   return null;
  }
 }
-module.exports={IconResolver,fallback,fallbackTile,esc,MAX_ICON_BYTES,MAX_EMBED_BYTES};
+module.exports={IconResolver,MAX_ICON_BYTES,MAX_EMBED_BYTES};

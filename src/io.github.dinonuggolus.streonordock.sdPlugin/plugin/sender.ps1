@@ -53,11 +53,6 @@ function ReleaseActive([string]$reason){
 function Command($cmd){
  if($cmd.kind -eq 'stop'){$script:running=$false;return}
  if($cmd.kind -eq 'release'){ReleaseActive 'release';return}
- if($cmd.kind -eq 'procCount'){
-  # Count only: process names are enumerated, no property of the process is read, no handle is opened.
-  if($DryRun){$n=[int]$env:STREONORDOCK_DRY_PROCS}else{$n=@(Get-Process -Name ([IO.Path]::GetFileNameWithoutExtension($GameProcess)) -ErrorAction SilentlyContinue).Count}
-  Emit @{bridge='procs';count=$n;req=$cmd.req};return
- }
  if($cmd.kind -eq 'send'){
   if($script:socket -and $script:socket.State -eq 'Open'){
    if($outbox.Count -ge 128 -or ([string]$cmd.message).Length -gt 1048576){throw 'Host output limit'}

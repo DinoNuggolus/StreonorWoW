@@ -1,5 +1,8 @@
 # StreonorWoW dev log
 
+> Phase 1 (2026-11-08, below at the end) removed readouts, status, cooldown/count/timer rendering, estimators, chat/combat-log
+> handling and log cleanup. Older entries describe removed features and are historical only.
+
 ## 2026-11-07 controller plugin 0.1.0 (current run; no git writes)
 
 - Implementing explicit supplied brief in this working tree; design and implementation
@@ -243,3 +246,12 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
 ## 2026-11-08 one press = one tap
 - index.js sends `{kind:'tap'}` (sender.ps1: down, 30 ms, up, accepted/released 'tap'); config `fireOn` press|release. Old overlap-refusal host test removed (taps no longer overlap).
 - Verified on a clean tree built from the index (HEAD + these changes): 88 tests on Node 26 and 20. Another session had uncommitted render/icon work in the same repo; only my hunks were committed.
+
+## 2026-11-08 Phase 1: minimal icon-only plugin, export schema 2
+- Removed: readout/status manifest actions, lib cadence/chatParser/chatTail/estimator/logCleanup/pressTimers/readout, LCD and
+  cooldown rendering, savedAt/age/stale overlays, showAlert feedback, procCount relay command, log-related config keys, and
+  their tests/fixtures. The plugin has no code path that reads or deletes WoW chat/combat logs (grep-tested).
+- Kept: icon reader/library/cache, full-bleed 144x144 key tile (icon / blank / question glyph), guarded one-tap chord sending
+  (fireOn press|release, duplicate-edge suppression).
+- Export reader: schema 2 (`StreonorDockDB.export`), transitional schema 1 (icons only). Unsupported/garbled data blanks keys.
+- Open: addon-side writer, hardware verification, deployment (not done).
