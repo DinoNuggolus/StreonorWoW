@@ -163,3 +163,10 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
   re-sent; env STREONORDOCK_REDRAW_MS for tests.
 - New log events: `firstAppear` {snapshot,error}, `snapshotLoaded` {file,savedAt,page,filled,ageSeconds,stale},
   `redrawAll` {reason,contexts}, `hostDisconnected`.
+
+## 2026-11-08 snapshot presentation and stack counts removed
+- User decision: no age labels, STALE/OLD/NO SNAPSHOT banners, 'snapshot' wording, Status age, `staleAfterSeconds`,
+  or controller count badges / `~N` ledger / `consumableItemIds`. lib/countLedger.js and its tests deleted.
+- Kept: SavedVariables file as the data pipe (icons, kinds, page, cooldown end times), graceful missing/corrupt
+  handling (neutral tiles, logged), absolute-time cooldown countdowns, chord sending, heartbeat redraw, startup logs.
+- Status shows 'StreonorDock' and 'Page N/M'. The earlier STALE-redesign notes above are superseded.

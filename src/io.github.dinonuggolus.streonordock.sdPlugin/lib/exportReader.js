@@ -9,7 +9,6 @@ function cleanSlot(raw,readout=false){
  const out={kind:x.kind};for(const k of [readout?'itemID':'id','iconFileID']){const v=integer(x[k],2147483647);if(v>0)out[k]=v;}
  if(typeof x.name==='string')out.name=x.name.slice(0,100).replace(/[\x00-\x1f\x7f]/g,'');
  if(x.kind==='item'){
-  const count=integer(x.count,999999);if(count!==undefined)out.count=count;
   if(['game','est','used'].includes(x.source)){out.source=x.source;const end=num(x.endsAt,1e11);if(x.source!=='used'&&end!==undefined)out.endsAt=end;}
  }
  return out;
@@ -46,6 +45,6 @@ class ExportReader {
    }
   }catch(e){this.snapshot=null;this.signature=null;this.error=String(e.message).slice(0,200);return previous!==null;}
  }
- view(){if(!this.snapshot)return null;const s=this.snapshot,now=this.now();const ageSeconds=Math.max(0,(now-s.mtimeMs)/1000,now/1000-s.savedAt);const limit=num(this.config.staleAfterSeconds,86400*365)??43200;return {...s,ageSeconds,stale:ageSeconds>limit};}
+ view(){return this.snapshot?{...this.snapshot}:null;}
 }
 module.exports={ExportReader,normalize,cleanSlot};

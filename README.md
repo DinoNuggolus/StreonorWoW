@@ -1,6 +1,11 @@
 # StreonorDock controller plugin 0.1.0
 
-15 fixed chord senders and saved snapshot displays for Streonor S15 / WoW: Forever.
+15 fixed chord senders and icon/cooldown displays for Streonor S15 / WoW: Forever.
+
+The displays are drawn from the StreonorDock addon's saved data file (SavedVariables). WoW writes
+that file only when the game saves (`/reload`, logout), so the keys show what the addon saved last;
+they update at the next save. If the file is missing or unreadable the keys draw neutral empty tiles
+(the reason is logged) and key sending is unaffected.
 Built and tested locally without WoW or a device. **Not deployed; real input and hardware are unverified.**
 
 Source: `src/io.github.dinonuggolus.streonordock.sdPlugin/`. No npm packages, downloads, telemetry, external
@@ -22,25 +27,25 @@ writes are restricted to that plugin folder's `logs/`. Tests use authored fixtur
    Recommended initial layout: Dock Readout 1 at (5,0), Dock Readout 2 at (5,1), Dock Status
    at (5,2). Swap Status for Readout 3 to see all three items, or use a second Streonor profile
    layout. Stock system-monitor widgets remain swappable in any Information region.
-6. Without a saved export, `NO DATA` + a red `NO SNAPSHOT` banner is expected. With a character, set up the
+6. Without a saved export the keys show neutral tiles. With a character, set up the
    StreonorDock addon and `/reload` or logout. Images should update within a polling interval.
-   Buttons send fixed chords even with missing or stale data; focus must be Wow.exe.
+   Buttons send fixed chords even when the saved data is missing; focus must be Wow.exe.
 
 Read diagnostics in the **deployed** plugin's `logs/streonordock.jsonl` (one JSON object per
 line); `.previous` is the preceding capped log. Example: `Get-Content <plugin>/logs/streonordock.jsonl -Tail 30`.
 Source tests write logs only in the source plugin's own `logs/`. Each log file is capped at
-1 MiB, with one prior file. Errors are bounded and repeated snapshot failures are suppressed.
+1 MiB, with one prior file. Errors are bounded and repeated data-file failures are suppressed.
 There is no property inspector and action settings cannot remap keys.
 
 ## Config reference
 
 | Key | Default | Meaning |
 |---|---|---|
-| `savedVariablesPath` | empty | Explicit account-wide snapshot file; never written |
+| `savedVariablesPath` | empty | Explicit account-wide saved data file; never written |
 | `gamePath` | `G:\World of Warcraft\_forever_` | Auto-detect beneath `WTF/Account/*/SavedVariables/StreonorDock.lua`; newest mtime wins |
 | `iconDir` | empty | Plugin `icons/`; an absolute alternative or path relative to plugin root |
-| `staleAfterSeconds` | 43200 (12 h) | Age beyond which the red OLD SNAPSHOT banner appears (shorter ages only show a muted "saved 14m" label); nonnegative finite number, bounded at 365 days |
-| `consumableItemIds` | `[]` | Explicit IDs of items consumed on use; only these get press-count estimates |
+
+
 | `gameProcess` | `Wow.exe` | Foreground process filename; compared case-insensitively, no window-title matching |
 
 Auto-detection reads only when the plugin has visible actions. It scans at most 4096 account
@@ -55,47 +60,45 @@ the last saved character. `StreonorDockCharDB` is layout persistence, not the di
 | `lib/luatable.js` | Non-executing Lua data grammar, 5 MiB / depth 64 / 200,000 entries |
 | `lib/exportReader.js` | One-second stat polling; bounded read and stat/read/stat verification, 3 attempts, schema-1 field allowlist |
 | `lib/icons.js` | Bounded local icon sources, inert SVG subset, stable coloured initial fallback |
-| `lib/countLedger.js` | Pure in-memory accepted-press count estimates; no I/O or timers |
-| `lib/render.js` | Pure escaped 144x144 SVG, counts, page, cooldown, stale/missing states |
+
+| `lib/render.js` | Pure escaped 144x144 SVG: icon, name, cooldown timer, page badge; Status shows the page |
 | `lib/chords.js` | Fixed slot-to-chord/VK/scan plans, independently compared to addon Core.lua |
 | `plugin/index.js` | Host arguments, lifecycle, shared tick, image deduplication, input routing and capped logs |
 | `plugin/sender.ps1` | Loopback WebSocket relay + focus/modifier checks, scan-code SendInput and release lifecycle |
 | `plugin/config.json` | Local configuration above |
-| `tests/*.test.js`, `tests/mockhost.js` | Node built-in tests, authored snapshot, actual PowerShell relay integration |
+| `tests/*.test.js`, `tests/mockhost.js` | Node built-in tests, authored fixture, actual PowerShell relay integration |
 | `scripts/run-tests.ps1` | Runs the entire suite under Node 26 and bundled Node 20.8.1 |
 | `scripts/build-manifest.js` | Reproduces manifest and icon with Node built-ins |
 | `scripts/deploy-plugin.ps1` | Existing deployment utility, reused with explicit plugin name; not executed |
 
 The shared one-second tick polls while contexts exist. Only changed SVGs are sent: item timers
-redraw once a second while counting; Status age uses seconds under a minute, minutes under an
-hour, then hours/days. The tick is cancelled when no actions are visible. No fs.watch dependency.
+redraw once a second while counting. The tick is cancelled when no actions are visible. No fs.watch dependency.
 Registration, willAppear/willDisappear, keyDown/keyUp and didReceiveSettings follow the
 [SDK event contract](https://sdk.key123.vip/en/guide/events-received.html);
 [setImage](https://sdk.key123.vip/en/guide/events-sent.html) uses target 0 and SVG data URIs.
 Host output backpressure does not block the helper's safety loop; a bounded asynchronous queue
 holds display messages only, never input to replay.
 
-## Snapshot and timer meaning
+## Saved data and timer meaning
 
 Schema 1: `{schema,profileId,revision,savedAt,page={index,count},slots[1..15],readouts[1..3],player?}`.
-Only `kind`, ordinary IDs/name/icon/count, and item `source` / `endsAt` reach rendering.
+Only `kind`, ordinary IDs/name/icon, and item `source` / `endsAt` reach rendering (counts and other fields are ignored).
 Spells have no cooldown display. Unknown or odd fields are dropped; unknown schema fails soft.
 The source exports `game`, `est`, or `used`: these become `game`, `est`, `USED`; a known source
 without an end time shows `CD ?`. `USED` has no exported start time, so elapsed time cannot
-honestly be reconstructed. Missing counts remain absent, never fabricated as zero.
+honestly be reconstructed.
 
 `savedAt` and `endsAt` are server seconds. At read time, the file's mtime (local milliseconds)
 anchors `savedAt`: `serverNow = savedAt + max(0, (localNow - fileMtime)/1000)`.
 Remaining is `max(0, endsAt - serverNow)`, display-clamped to one day. This lets an **existing**
-snapshot timer count down; no new cooldowns are learned until the next save. A press never starts a
-controller timer. Age is the larger of elapsed time since mtime and local wall time minus
-`savedAt`, clamped at zero. Clock skew therefore biases toward an older/stale warning.
+timer count down; no new cooldowns are learned until the next save. A press never starts a
+controller timer.
 Files copied/restored with fresh mtimes can shift cooldown anchors; do a fresh `/reload`.
 Timestamp precision, save delay, and clock skew make the mapping approximate.
 
-Keys/readouts show page badges and OLD SNAPSHOT above the threshold; missing/invalid data
-shows NO DATA and a red NO SNAPSHOT banner. Ordinary age (the file only changes on /reload or logout) is a small muted "saved 14m" label from 1 minute on, never a banner. Status always says SAVED SNAPSHOT and shows page and age.
-Player gold/bag fields are parsed but deliberately not used for the three **item** readouts.
+Keys/readouts show a page badge and the item cooldown (`Ns game|est`, `USED`, `CD ?`). Missing or
+invalid data draws neutral tiles with no banner. The Status region shows `StreonorDock` and, when data is
+loaded, `Page N/M`. Player gold/bag fields are parsed by the addon export but not used here.
 
 ## Input behavior
 
@@ -165,10 +168,9 @@ committed or published (`.gitignore` blocks `icon-cache/` and all image/zip type
 2. Release, switch away from WoW, press: no input, showAlert. Hold a physical modifier first:
    refusal. Hold a controller key then switch focus or wait 2 seconds: no stuck modifiers;
    release before the next press. Confirm rapidly overlapping buttons are refused as documented.
-3. `/reload`: verify icons/counts, page number and snapshot age. Change pages out of combat,
+3. `/reload`: verify icons and page number. Change pages out of combat,
    `/reload`, verify exported page matches; pager keys remain addon bindings.
-4. Export older than staleAfterSeconds (12 h default): red OLD SNAPSHOT <age>. Missing/invalid export:
-   NO DATA. Verify chord sending still works in both states.
+4. Missing/invalid export: neutral tiles. Verify chord sending still works.
 5. With a cooldown item, use it then save: displayed countdown follows exported end time,
    `game`/`est` label remains visible, reaches zero, and a later save corrects it. With unknown
    duration: USED; no made-up countdown. Test the addon's combat readability separately.
@@ -185,7 +187,7 @@ committed or published (`.gitignore` blocks `icon-cache/` and all image/zip type
   this local use, and GetAsyncKeyState reports the relevant physical state in the game desktop.
 - Actual addon/API/export persistence, secret guards, item cooldown observations and save timing
   remain the addon's in-game checklist. Fixtures reproduce its current source, not an observed save.
-- File mtime anchors the snapshot closely enough; copied files, skewed clocks and same-size writes
+- File mtime anchors the saved cooldown end times closely enough; copied files, skewed clocks and same-size writes
   with unchanged mtimes cannot be resolved perfectly. No live data route exists.
 - Rapid overlapping slots are intentionally refused. A physically lost keyUp leaves that slot
   suppressed until an up/context removal; timeout releases keys but never guesses another press.
@@ -193,43 +195,3 @@ committed or published (`.gitignore` blocks `icon-cache/` and all image/zip type
   task permission. The readable spike and scratchpad mock, SDK and new tests informed this build.
 - Fresh reviewer delegation failed in the tool service; final review was by the implementing agent.
   This does not replace project-manager review. No deployment, profile edit, git write or push occurred.
-
-## Press-based estimated stack counts
-
-The current schema-1 addon export contains no consumable/reusable flag. Set
-`consumableItemIds` in plugin/config.json to an explicit list of IDs known to be
-used up, for example `"consumableItemIds": [118]` for Minor Healing Potion.
-The default is empty: unknown items, reusable items and spells never decrement.
-Stack size, item name and cooldown source are not evidence that an item is consumed.
-Do not put reusable items in this list. No addon changes are required or made.
-
-A successfully sent physical keyDown is acknowledged by the sender after its guards
-and SendInput sequence. Only that acknowledgement subtracts one from the configured
-item's snapshot baseline, using the slot/item mapping captured when the down was
-requested. A held/repeated press counts once; unfocused, physical-conflict, overlap
-and failed sends do not count. Key sending stays independent of the export/ledger;
-ledger exceptions fall back to snapshot rendering and never suppress chords.
-Accepted input does not prove the game consumed an item (cooldown, wrong target,
-interrupted use, etc.), so the count is an estimate.
-
-Plain numbers mean no counted presses since the loaded snapshot; after a counted
-press, keys and matching item readouts show `~N` (including `~0` at the floor),
-and Status says `counts est since snapshot`. Counts are clamped to 0..999999;
-missing counts remain absent. Multiple slots for the same item share deductions
-because the exported count is an inventory total. No controller cooldown starts.
-
-Spring-water example (with its item ID configured): after reload **5**, use 3
-accepted presses -> **~2**, buy 5 more -> still **~2** until reload, then **7**.
-Gains from buying/looting and uses outside this controller are invisible until a
-reload/logout. No certainty about live inventory is claimed, even for a plain
-baseline number: it is still a saved snapshot.
-
-Reset policy: a different savedAt, normalized export content or file mtime clears
-all deductions and pending old acknowledgements. This deliberately uses the simple
-reset rule rather than comparing press times against the approximate server/local
-cooldown anchor. Even presses after savedAt but before loading that changed snapshot
-are discarded; same-second export changes reset too. Missing/invalid exports clear
-the ledger; recovery starts from the loaded baseline. Nothing is persisted: plugin
-restart loses all estimates and returns to the saved baseline. Unchanged polls and
-age/stale changes preserve estimates. File changes invisible to the reader's
-mtime/size signature remain its existing limitation.

@@ -4,7 +4,7 @@ const {ExportReader,normalize}=require('../src/io.github.dinonuggolus.streonordo
 const fixture=path.join(__dirname,'fixtures','StreonorDock.lua');
 test('realistic account file and per-character tables, allowlist, age',async()=>{
  const r=new ExportReader({savedVariablesPath:fixture},{now:()=>1900000000000}); await r.poll();const s=r.view();
- a.equal(s.slots[1].name,'Moonfire');a.equal(s.slots[2].source,'est');a.equal(s.readouts[1].itemID,118);a.equal(s.page.index,2);a.equal(s.stale,true);a.equal(s.slots[2].extra,undefined);
+ a.equal(s.slots[1].name,'Moonfire');a.equal(s.slots[2].source,'est');a.equal(s.readouts[1].itemID,118);a.equal(s.page.index,2);a.equal(s.slots[2].extra,undefined);
 });
 test('reject schema and bad envelope; sanitize individual fields',()=>{
  for(const x of [null,{}, {schema:2}, {schema:'1'}, {schema:1,savedAt:0}])a.throws(()=>normalize(x,1000));
@@ -30,14 +30,4 @@ test('stat/read/stat detects an actual mid-read replacement and retries',async t
  const dir=await fs.mkdtemp(path.join(__dirname,'tmp-race-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));const file=path.join(dir,'snapshot.lua');const good=await fs.readFile(fixture,'utf8');await fs.writeFile(file,good);
  let reads=0,waits=0;const io={...fs,open:async(...args)=>{const h=await fs.open(...args);return {close:()=>h.close(),read:async(...readArgs)=>{const result=await h.read(...readArgs);if(reads++===0)await fs.writeFile(file,good.replace('Moonfire','Replaced Spell'));return result;}};}};
  const r=new ExportReader({savedVariablesPath:file},{fs:io,sleep:async()=>{waits++;}});await r.poll();a.equal(waits,1);a.equal(r.view().slots[1].name,'Replaced Spell');
-});
-test('age uses older timestamp, configurable stale threshold and clamps future age',async()=>{
- const stat=await fs.stat(fixture);const r=new ExportReader({savedVariablesPath:fixture,staleAfterSeconds:10},{now:()=>stat.mtimeMs+11000});await r.poll();a.equal(r.view().stale,true);a.ok(r.view().ageSeconds>=11);
- const future=new ExportReader({savedVariablesPath:fixture},{now:()=>0});await future.poll();a.equal(future.view().ageSeconds,0);a.equal(future.view().stale,false);
-});
-test('default stale threshold is 12 hours, not minutes',async()=>{
- const stat=await fs.stat(fixture);
- const r=new ExportReader({savedVariablesPath:fixture},{now:()=>stat.mtimeMs+3600*1000});await r.poll();
- const v=r.view();a.equal(v.stale,false);a.ok(v.ageSeconds>=3600);
- const r2=new ExportReader({savedVariablesPath:fixture},{now:()=>stat.mtimeMs+13*3600*1000});await r2.poll();a.equal(r2.view().stale,true);
 });

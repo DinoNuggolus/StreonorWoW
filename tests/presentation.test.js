@@ -13,27 +13,20 @@ test('fallback stable, escaped, bounded; local cache and size rejection',t=>{
  const custom=new IconResolver({},[()=>{throw Error('bad source');},()=> 'data:image/png;base64,AAAA']);a.match(custom.resolve({}),/data:image\/png/);
 });
 test('render server clock mapping, countdown expiry, source and unknown labels',()=>{
- const s={savedAt:1000,mtimeMs:2000000,ageSeconds:5,stale:false,page:{index:2,count:3},slots:{1:{kind:'item',name:'Potion',count:4,endsAt:1120,source:'est'}},readouts:{1:{kind:'item',source:'used'}}};
+ const s={savedAt:1000,mtimeMs:2000000,page:{index:2,count:3},slots:{1:{kind:'item',name:'Potion',count:4,endsAt:1120,source:'est'}},readouts:{1:{kind:'item',source:'used'}}};
  a.equal(render.remaining(s.slots[1],s,2010000),110);a.equal(render.remaining(s.slots[1],s,2200000),0);
- const svg=render.slot(s,1,2010000);for(const text of ['110s','est','4','P2','Potion'])a.ok(svg.includes(text),text);
+ const svg=render.slot(s,1,2010000);for(const text of ['110s','est','P2','Potion'])a.ok(svg.includes(text),text);
  a.match(render.readout(s,1,2010000),/USED/);s.slots[1].endsAt=undefined;a.match(render.slot(s,1,2010000),/CD \?/);
  s.slots[1]={kind:'spell',endsAt:1120,source:'est'};a.ok(!render.slot(s,1,2010000).includes('110s'));
 });
-test('honest missing, stale, status, empty and escape/clamp',()=>{
- a.match(render.slot(null,1),/NO DATA/);a.match(render.slot(null,1),/NO SNAPSHOT/);
- const s={savedAt:1,mtimeMs:1000,ageSeconds:999,stale:true,page:{index:1,count:1},slots:{1:{kind:'item',name:'<&"',count:1e99}},readouts:{}};
- a.match(render.slot(s,1),/&lt;&amp;&quot;/);a.match(render.slot(s,1),/999999/);a.match(render.slot(s,2),/EMPTY/);a.match(render.slot(s,1),/OLD SNAPSHOT/);
- const status=render.status(s);for(const v of ['SAVED SNAPSHOT','P1 / 1','16m','OLD SNAPSHOT'])a.ok(status.includes(v),v);
-});
-test('in-session age is a muted label, not a red banner; long age or missing data warns',()=>{
- const base={savedAt:1,mtimeMs:1000,page:{index:1,count:1},slots:{1:{kind:'item',name:'Potion',count:3,endsAt:2000,source:'game'}},readouts:{}};
- const fresh={...base,ageSeconds:840,stale:false};const svg=render.slot(fresh,1,1000+840000);
- a.match(svg,/saved 14m/);a.ok(!svg.includes('#853131'));a.ok(!svg.includes('SNAPSHOT 14'));
- a.match(render.status(fresh),/saved 14m/);a.match(render.status(fresh),/Age 14m/);
- a.ok(!render.slot({...base,ageSeconds:30,stale:false},1).includes('saved '));
- const old=render.slot({...base,ageSeconds:13*3600,stale:true},1);a.match(old,/OLD SNAPSHOT 13h/);a.ok(!old.includes('saved '));
- a.match(render.slot(null,1),/NO SNAPSHOT/);
- // cooldown end times are absolute: remaining() is unaffected by display age
- a.equal(render.remaining(base.slots[1],base,1000+100000),1899);
- const est={...base,ageSeconds:840,stale:false,slots:{1:{kind:'item',name:'P',count:3,countEstimated:true}}};a.match(render.slot(est,1),/~3/);
+test('no snapshot presentation: neutral tiles, no banners, age labels or counts; status shows page',()=>{
+ const s={savedAt:1,mtimeMs:1000,page:{index:2,count:3},slots:{1:{kind:'item',name:'<&"',count:77,endsAt:2000,source:'game'}},readouts:{}};
+ const none=render.slot(null,1);for(const bad of ['NO DATA','STALE','SNAPSHOT','saved','#853131'])a.ok(!none.includes(bad),bad);
+ const svg=render.slot(s,1,1000+100000);a.match(svg,/&lt;&amp;&quot;/);a.match(svg,/1899s game/);a.ok(!svg.includes('>77<')&&!svg.includes('~'));
+ for(const bad of ['SNAPSHOT','STALE','saved ','#853131'])a.ok(!svg.includes(bad),bad);
+ a.match(render.slot(s,2),/EMPTY/);
+ const st=render.status(s);a.match(st,/Page 2.3/);a.match(st,/StreonorDock/);for(const bad of ['Age','SNAPSHOT','STALE'])a.ok(!st.includes(bad),bad);
+ a.match(render.status(null),/StreonorDock/);a.ok(!render.status(null).includes('Page'));
+ // cooldowns are absolute: remaining depends only on endsAt, savedAt and file mtime, not on display age
+ a.equal(render.remaining(s.slots[1],s,1000+100000),1899);
 });

@@ -2,7 +2,5 @@
   "savedVariablesPath": "",
   "gamePath": "G:\\World of Warcraft\\_forever_",
   "iconDir": "G:\\WoWFOREVER_ADDONS\\StreonorWoW\\icon-cache",
-  "staleAfterSeconds": 43200,
-  "gameProcess": "Wow.exe",
-  "consumableItemIds": []
+  "gameProcess": "Wow.exe"
 }

@@ -5,7 +5,7 @@
   "Icon": "images/icon.png",
   "Category": "StreonorDock",
   "CategoryIcon": "images/icon.png",
-  "Description": "15 fixed WoW chords and saved snapshot item displays.",
+  "Description": "15 fixed WoW chords and item icon and cooldown displays.",
   "Version": "0.1.0",
   "CodePathWin": "plugin/index.js",
   "OS": [
@@ -36,7 +36,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key2",
@@ -53,7 +53,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key3",
@@ -70,7 +70,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key4",
@@ -87,7 +87,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key5",
@@ -104,7 +104,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key6",
@@ -121,7 +121,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key7",
@@ -138,7 +138,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key8",
@@ -155,7 +155,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key9",
@@ -172,7 +172,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key10",
@@ -189,7 +189,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key11",
@@ -206,7 +206,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key12",
@@ -223,7 +223,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key13",
@@ -240,7 +240,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key14",
@@ -257,7 +257,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.key15",
@@ -274,7 +274,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; saved snapshot image."
+      "Tooltip": "Fixed ALT-CTRL-SHIFT chord; icon and cooldown from saved addon data."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.readout1",
@@ -291,7 +291,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Saved item snapshot. Display only."
+      "Tooltip": "Item icon and cooldown from saved addon data. Display only."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.readout2",
@@ -308,7 +308,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Saved item snapshot. Display only."
+      "Tooltip": "Item icon and cooldown from saved addon data. Display only."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.readout3",
@@ -325,7 +325,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Saved item snapshot. Display only."
+      "Tooltip": "Item icon and cooldown from saved addon data. Display only."
     },
     {
       "UUID": "io.github.dinonuggolus.streonordock.status",
@@ -342,7 +342,7 @@
       ],
       "SupportedInMultiActions": false,
       "UserTitleEnabled": false,
-      "Tooltip": "Saved snapshot page and age; replaces one readout on the S15."
+      "Tooltip": "StreonorDock page; replaces one readout on the S15."
     }
   ]
 }

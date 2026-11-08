@@ -1,7 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),{spawn}=require('node:child_process'),readline=require('node:readline');
 const {ExportReader}=require('../lib/exportReader'),{IconResolver}=require('../lib/icons'),render=require('../lib/render');
-const {CountLedger}=require('../lib/countLedger');
 const PREFIX='io.github.dinonuggolus.streonordock.';
 function args(argv){const o={};for(let i=0;i<argv.length;i+=2){if(!/^-(port|pluginUUID|registerEvent|info)$/.test(argv[i])||argv[i+1]===undefined)throw Error('Invalid host arguments');o[argv[i].slice(1)]=argv[i+1];}if(!/^\d+$/.test(o.port)||+o.port<1||+o.port>65535||!o.pluginUUID||o.pluginUUID.length>256||!/^registerPlugin$/.test(o.registerEvent))throw Error('Missing host arguments');return o;}
 function logger(){const dir=path.join(__dirname,'..','logs'),file=path.join(dir,'streonordock.jsonl');let last='',at=0;return(event,data)=>{try{let entry={time:new Date().toISOString(),event,data};if(JSON.stringify(entry).length>3000)entry.data=JSON.stringify(data).slice(0,2000);const line=JSON.stringify(entry)+'\n';const identity=JSON.stringify({event,data:entry.data});if(identity===last&&Date.now()-at<60000)return;last=identity;at=Date.now();fs.mkdirSync(dir,{recursive:true});if(fs.existsSync(file)&&fs.statSync(file).size+Buffer.byteLength(line)>1048576){const old=file+'.previous';if(fs.existsSync(old))fs.unlinkSync(old);fs.renameSync(file,old);}fs.appendFileSync(file,line);}catch{}};}
@@ -12,8 +11,7 @@ async function main(){
  if(config.iconDir&&!path.isAbsolute(config.iconDir))config.iconDir=path.resolve(__dirname,'..',config.iconDir);
  if(config.gameProcess&&!/^[a-zA-Z0-9_.-]+(?:\.exe)?$/.test(config.gameProcess))delete config.gameProcess;
  const reader=new ExportReader(config),icons=new IconResolver(config),contexts=new Map(),held=new Set();let timer=null,busy=false,stopping=false,lastError='';
- const ledger=new CountLedger(config.consumableItemIds),pendingPresses=new Map();let pressId=0;
- function countWork(work,fallback){try{return work();}catch(e){log('countLedgerError',e.message);return fallback;}}
+ let pressId=0;
  const dry=process.env.STREONORDOCK_DRY_RUN==='1';
  const relayArgs=['-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(__dirname,'sender.ps1'),'-Port',options.port,'-GameProcess',config.gameProcess||'Wow.exe','-ParentPid',String(process.pid)];if(dry)relayArgs.push('-DryRun');
  const bridge=spawn('powershell.exe',relayArgs,{windowsHide:true,stdio:['pipe','pipe','pipe']});
@@ -22,12 +20,12 @@ async function main(){
  function flushImages(){if(stopping||bridge.stdin.destroyed)return;while(pendingImages.size&&bridge.stdin.writableLength<65536){const [context,value]=pendingImages.entries().next().value;pendingImages.delete(context);command({kind:'send',message:JSON.stringify(value)});}}
  bridge.stdin.on('drain',flushImages);
  function send(value){if(value.event==='setImage'){pendingImages.set(value.context,value);flushImages();}else command({kind:'send',message:JSON.stringify(value)});}
- function draw(context,entry){const raw=reader.view(),s=countWork(()=>ledger.view(raw),raw);const svg=entry.type==='key'?render.slot(s,entry.index,Date.now(),icons):entry.type==='readout'?render.readout(s,entry.index,Date.now(),icons):render.status(s);if(svg===entry.last)return;entry.last=svg;send({event:'setImage',context,payload:{target:0,image:'data:image/svg+xml;charset=utf8,'+encodeURIComponent(svg)}});}
+ function draw(context,entry){const s=reader.view();const svg=entry.type==='key'?render.slot(s,entry.index,Date.now(),icons):entry.type==='readout'?render.readout(s,entry.index,Date.now(),icons):render.status(s);if(svg===entry.last)return;entry.last=svg;send({event:'setImage',context,payload:{target:0,image:'data:image/svg+xml;charset=utf8,'+encodeURIComponent(svg)}});}
  const redrawMs=Math.max(50,Number(process.env.STREONORDOCK_REDRAW_MS)||30000);let lastFull=Date.now(),firstLogged=false;
  // Heartbeat: forget what we last sent so every visible action is re-sent. Without this a host that dropped an image (page/profile switch, sleep, app restart) stays blank until the snapshot changes.
- async function tick(){if(busy||stopping)return;busy=true;try{const changed=await reader.poll();if(changed&&reader.snapshot){const v=reader.view();log('snapshotLoaded',{file:path.basename(reader.file||''),savedAt:reader.snapshot.savedAt,page:reader.snapshot.page,filled:Object.values(reader.snapshot.slots).filter(x=>x.kind!=='empty').length,ageSeconds:Math.round(v?.ageSeconds||0),stale:!!v?.stale});}
+ async function tick(){if(busy||stopping)return;busy=true;try{const changed=await reader.poll();if(changed&&reader.snapshot){log('snapshotLoaded',{file:path.basename(reader.file||''),savedAt:reader.snapshot.savedAt,page:reader.snapshot.page,filled:Object.values(reader.snapshot.slots).filter(x=>x.kind!=='empty').length});}
   if(Date.now()-lastFull>=redrawMs){lastFull=Date.now();for(const [,e]of contexts)e.last=undefined;}
-  countWork(()=>ledger.load(reader.snapshot));if(reader.error!==lastError){lastError=reader.error;if(lastError)log('snapshotError',lastError);}for(const [context,entry]of contexts)draw(context,entry);if(changed)log('redrawAll',{reason:reader.snapshot?'snapshot':'no-snapshot',contexts:contexts.size});}catch(e){log('tickError',e.message);}finally{busy=false;}}
+if(reader.error!==lastError){lastError=reader.error;if(lastError)log('snapshotError',lastError);}for(const [context,entry]of contexts)draw(context,entry);if(changed)log('redrawAll',{reason:reader.snapshot?'snapshot':'no-snapshot',contexts:contexts.size});}catch(e){log('tickError',e.message);}finally{busy=false;}}
  function ensureTimer(){if(contexts.size&&!timer){timer=setInterval(tick,1000);tick();}else if(!contexts.size&&timer){clearInterval(timer);timer=null;}}
  function releaseContext(context){const e=contexts.get(context);if(e?.type==='key'&&held.delete(context))command({kind:'chord',slot:e.index,down:false});}
  function handle(m){
@@ -41,14 +39,13 @@ async function main(){
   else if(m.event==='keyDown'||m.event==='keyUp'){
    const e=contexts.get(m.context);if(e?.type!=='key')return;const down=m.event==='keyDown';if(down){if(held.has(m.context))return;held.add(m.context);}else if(!held.delete(m.context))return;
    const id=down?++pressId:undefined;
-   if(down)countWork(()=>{if(pendingPresses.size>=128)pendingPresses.delete(pendingPresses.keys().next().value);pendingPresses.set(id,ledger.capture(e.index));});
    command({kind:'chord',slot:e.index,down,pressId:id});
   }else if(m.event==='didReceiveSettings'){const e=contexts.get(m.context);if(e)draw(m.context,e);}
  }
  function stop(){if(stopping)return;stopping=true;if(timer)clearInterval(timer);command({kind:'stop'});bridge.stdin.end();const deadline=setTimeout(()=>bridge.kill(),3000);deadline.unref();}
  bridge.stdin.on('error',e=>log('relayInputError',e.message));bridge.stderr.on('data',d=>log('relayStderr',d.toString().slice(0,1000)));
  bridge.on('error',e=>{log('relayError',e.message);stop();});bridge.on('exit',code=>{log('relayExit',code);if(timer)clearInterval(timer);process.stdin.pause();process.exitCode=code||0;});
- readline.createInterface({input:bridge.stdout}).on('line',line=>{if(line.length>2*1048576)return;try{const m=JSON.parse(line);if(m.bridge){if(dry)process.stdout.write(JSON.stringify(m)+'\n');if(m.bridge==='disconnected')log('hostDisconnected',m);if(m.bridge==='ready'){send({event:options.registerEvent,uuid:options.pluginUUID});log('started',{dryRun:dry});}else{log('relay',m);if(m.bridge==='accepted'||m.bridge==='refused'){countWork(()=>{const token=pendingPresses.get(m.pressId);pendingPresses.delete(m.pressId);if(m.bridge==='accepted'&&token?.slot===m.slot)ledger.accept(token);});if(m.bridge==='accepted')for(const [context,e]of contexts)countWork(()=>draw(context,e));}if(m.bridge==='refused'||m.bridge==='error'){for(const [context,e]of contexts)if(e.type==='key'&&(!m.slot||e.index===m.slot))send({event:'showAlert',context});}}}else handle(m);}catch(e){log('messageError',e.message);}});
+ readline.createInterface({input:bridge.stdout}).on('line',line=>{if(line.length>2*1048576)return;try{const m=JSON.parse(line);if(m.bridge){if(dry)process.stdout.write(JSON.stringify(m)+'\n');if(m.bridge==='disconnected')log('hostDisconnected',m);if(m.bridge==='ready'){send({event:options.registerEvent,uuid:options.pluginUUID});log('started',{dryRun:dry});}else{log('relay',m);if(m.bridge==='refused'||m.bridge==='error'){for(const [context,e]of contexts)if(e.type==='key'&&(!m.slot||e.index===m.slot))send({event:'showAlert',context});}}}else handle(m);}catch(e){log('messageError',e.message);}});
  process.on('SIGINT',stop);process.on('SIGTERM',stop);process.on('uncaughtException',e=>{log('fatal',e.message);stop();});process.on('unhandledRejection',e=>{log('fatal',String(e));stop();});
  // Host-launched plugins may have stdin closed; only the harness uses stdin EOF to stop.
  if(dry){process.stdin.resume();process.stdin.on('end',stop);}
