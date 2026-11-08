@@ -193,3 +193,14 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
 - lib/logCleanup.js + relay `procCount` command (process-name count only). Chose "never delete while Wow.exe runs,
   unknown = running" over relying on unlink success alone, because a game that opened the log with share-delete
   would otherwise lose a live log mid-session. Tests: tests/logCleanup.test.js (temp dirs, fake io, plugin dry-run).
+
+## 2026-11-08 Full icon library
+- scripts/build-icon-library.js (worker_threads, incremental): 30,386 pack PNGs -> icon-library/<ID>.png
+  at 72 px via the shrink ladder (all <= 9.5 KB, hard limit 12 KB). Pack: 30,386 icons, all with an ID
+  (0 without); listfile icon IDs 33,885, of which 3,499 have no pack file; no pack icon maps to more than
+  one ID. 30,386 files, 240.2 MiB (about 314 MB on disk with clusters), ~30 s on 16 cores.
+- plugin config: iconDir=icon-library, iconFallbackDirs=[icon-cache]; IconResolver searches dirs in order.
+- scripts/check-icons.js: export slots vs library. Current export: 7/7 present.
+- tests/iconLibrary.test.js: build mapping/incremental/worker path, check-icons, real-plugin runtime flow
+  (rewrite export -> new icon, fallback dir, missing ID -> text tile) and a no-network source check.
+- Unverified: appearance on real S15 hardware.

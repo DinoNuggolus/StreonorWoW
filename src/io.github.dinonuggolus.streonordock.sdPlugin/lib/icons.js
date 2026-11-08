@@ -22,14 +22,14 @@ function safeSvg(text){
 // xlink:href (with xmlns:xlink on the root) is understood by every SVG renderer, including strict SVG 1.1/Tiny ones that ignore plain href.
 const image=uri=>`<image x="8" y="20" width="128" height="88" xlink:href="${uri}"/>`;
 class IconResolver{
- constructor(config={},sources=[],onSkip=()=>{}){this.dir=config.iconDir||path.join(__dirname,'..','icons');this.sources=sources;this.enabled=config.embedIcons!==false;this.onSkip=onSkip;}
+ constructor(config={},sources=[],onSkip=()=>{}){this.dir=config.iconDir||path.join(__dirname,'..','icons');this.dirs=[this.dir,...(Array.isArray(config.iconFallbackDirs)?config.iconFallbackDirs.filter(d=>typeof d==='string'&&d):[])];this.sources=sources;this.enabled=config.embedIcons!==false;this.onSkip=onSkip;}
  skip(slot,reason,bytes){try{this.onSkip({id:slot.iconFileID,reason,bytes});}catch{}}
  resolve(slot={}){
   if(!this.enabled)return fallback(slot.name);
   for(const source of this.sources){try{const result=source(slot);if(typeof result==='string'&&result.length<=MAX_EMBED_BYTES*2&&/^data:image\/(png|jpeg);base64,[a-zA-Z0-9+/=]+$/.test(result))return image(result);}catch{}}
   const id=slot.iconFileID;if(Number.isInteger(id)&&id>0&&id<=2147483647){
-   for(const ext of ['png','jpg','svg']){let fd;try{
-    fd=fs.openSync(path.join(this.dir,`${id}.${ext}`),'r');const st=fs.fstatSync(fd);if(!st.isFile())continue;if(st.size>MAX_EMBED_BYTES){this.skip(slot,'icon file too large',st.size);continue;}
+   for(const dir of this.dirs)for(const ext of ['png','jpg','svg']){let fd;try{
+    fd=fs.openSync(path.join(dir,`${id}.${ext}`),'r');const st=fs.fstatSync(fd);if(!st.isFile())continue;if(st.size>MAX_EMBED_BYTES){this.skip(slot,'icon file too large',st.size);continue;}
     const buf=Buffer.alloc(st.size+1),length=fs.readSync(fd,buf,0,buf.length,0);if(length!==st.size)continue;const bytes=buf.subarray(0,length);
     if(ext==='svg'&&!safeSvg(bytes.toString('utf8')))continue;
     if(ext==='png'&&!bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))continue;

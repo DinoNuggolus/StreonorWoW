@@ -9,6 +9,7 @@ async function main(){
  let config={};try{const file=process.env.STREONORDOCK_CONFIG||path.join(__dirname,'config.json');if(fs.statSync(file).size>65536)throw Error('Config too large');config=JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,''));if(!config||typeof config!=='object'||Array.isArray(config))throw Error('Config must be object');}catch(e){log('configError',e.message);config={};}
  for(const k of ['savedVariablesPath','gamePath','iconDir','gameProcess','logDir'])if(typeof config[k]!=='string'||config[k].length>4096)delete config[k];
  if(config.iconDir&&!path.isAbsolute(config.iconDir))config.iconDir=path.resolve(__dirname,'..',config.iconDir);
+ config.iconFallbackDirs=Array.isArray(config.iconFallbackDirs)?config.iconFallbackDirs.filter(d=>typeof d==='string'&&d&&d.length<=4096).slice(0,4).map(d=>path.isAbsolute(d)?d:path.resolve(__dirname,'..',d)):[];
  if(config.gameProcess&&!/^[a-zA-Z0-9_.-]+(?:\.exe)?$/.test(config.gameProcess))delete config.gameProcess;
  const reader=new ExportReader(config),icons=new IconResolver(config,[],e=>log('iconSkipped',e)),contexts=new Map(),held=new Set();let timer=null,busy=false,stopping=false,lastError='';
  let pressId=0;const timers=new PressTimers(),pending=new Map();

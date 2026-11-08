@@ -137,7 +137,27 @@ No icon files are bundled yet; coloured initial tiles are expected. A community 
 maps FileDataIDs to names only: it does not supply the images. Obtain pictures separately
 under suitable permissions and copy them locally; the plugin never downloads anything.
 
-### Populating icons from the community pack (private local cache)
+### Full icon library (automatic icons, no per-icon step)
+
+`icon-library\` holds one 72 px PNG (<= 9.5 KB) for every icon in the community pack that the
+wow-listfile maps to a FileDataID: `icon-library\<FileDataID>.png` (30,386 files, ~240 MiB). It sits
+next to the repo, outside the plugin folder, so `deploy-plugin.ps1` (`robocopy /MIR`) never copies or
+wipes it, and it is git-ignored (Blizzard artwork: never commit or publish). `plugin\config.json` sets
+`iconDir` to it and keeps the older `icon-cache\` as `iconFallbackDirs` so nothing regresses.
+
+Runtime flow (all local, no network, no AI): `/reload` in game -> the addon rewrites
+`StreonorDock.lua` -> the plugin sees the changed file and re-reads the slots -> for each slot it looks up
+`<iconFileID>.png` in `icon-library` (then the fallback dirs) -> draws it under the label. An ID that is
+not in the library gets the coloured text/initials tile. Restart Streonor once after deploying;
+afterwards just put any item or spell on a button and `/reload`.
+
+Rebuild or extend (incremental, skips valid existing files, prints unresolved):
+`node scripts\build-icon-library.js` (needs the pack in `_staging\icon-pack\png\png_icons` and
+`_staging\listfile\community-listfile.csv`; options `--pack --listfile --library --workers N --force`).
+Check the current export: `node scripts\check-icons.js` lists every slot icon ID as OK or MISSING.
+Icons the pack lacks (3,499 listfile IDs have no pack file, mostly newer art) fall back to text tiles.
+
+### Populating icons from the community pack (older per-export cache; superseded by the library)
 
 The shipped config sets `iconDir` to `G:\WoWFOREVER_ADDONS\StreonorWoW\icon-cache` (outside the
 plugin folder, so `deploy-plugin.ps1`'s `/MIR` never wipes it). Steps:
