@@ -59,7 +59,7 @@ function tile(s,item,index,now,resolver,timers){
  else{
   const icon=resolver?resolver.resolve(item):fallback(item.name);
   let cd=null;
-  if(item.kind==='item'){
+  if(item.kind==='item'||item.kind==='spell'){
    // Press-started plugin timer wins; otherwise a cooldown that was running at save time. Unknown = nothing.
    const t=timers?.info?timers.info(item):null,saved=remaining(item,s,now);
    if(t&&t.left>0&&t.left>=saved)cd=t;

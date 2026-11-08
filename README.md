@@ -297,3 +297,12 @@ format, are ignored, never guessed. Chat/combat logs are deleted after the game 
 set it to `false` temporarily to collect real samples for new rules.
 Config (`plugin/config.json`): `liveEstimates` (default `true`; `false` = saved values only), `showEstimateMarker`
 (default `false`; `true` prefixes `~` while a value is an estimate), optional `chatLogPath` (absolute).
+
+### Spell timers
+
+Spell keys now get the same press-started countdown and sweep as items, using `cooldownSeconds` from the
+addon export (`cooldownSource` = `learned` | `base` | `category` | `table`; `verified`, `categorySeconds`,
+`poolKey` optional). No known length = no timer. Spells with charges (`maxCharges` in the export) get **no** timer.
+Pool/category sharing happens only when the export carries a `poolKey`. A press the game refuses (mana, range,
+global cooldown, dead) can still start a false timer. Lengths come from the game's base cooldown or from out-of-combat
+learning in the addon; run `/sdock cdprobe` in game to see what the addon reads.
