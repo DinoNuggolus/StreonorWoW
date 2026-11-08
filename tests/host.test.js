@@ -16,7 +16,7 @@ test('real PowerShell relay: register, all contexts, press/release, rewrite, no 
  for(let i=1;i<=3;i++)host.send({event:'willAppear',action:`io.github.dinonuggolus.streonordock.readout${i}`,context:`R${i}`,payload:{}});
  host.send({event:'willAppear',action:'io.github.dinonuggolus.streonordock.status',context:'S',payload:{}});
  for(const c of [...Array.from({length:15},(_,i)=>`K${i+1}`),'R1','R2','R3','S']){const m=await host.wait(m=>m.event==='setImage'&&m.context===c);a.equal(m.payload.target,0);a.match(decodeURIComponent(m.payload.image),/<svg/);}
- await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&decodeURIComponent(m.payload.image).includes('Minor Healing Potion'));
+ await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&decodeURIComponent(m.payload.image).includes('>MH<'));   // key tiles show no names; a missing icon shows initials only
  const key=event=>host.send({event,action:'io.github.dinonuggolus.streonordock.key2',context:'K2',payload:{}});key('keyDown');key('keyDown');key('keyUp');
  for(let i=0;i<100&&!diagnostics.includes('"down":false');i++)await sleep(30);const chords=diagnostics.split(/\r?\n/).filter(x=>x.includes('"bridge":"chord"')).map(JSON.parse);a.equal(chords.length,2,diagnostics+stderr);a.equal(chords[0].slot,2);
  // Holding another slot makes slot 2 an overlap refusal: no second decrement.
@@ -25,7 +25,7 @@ test('real PowerShell relay: register, all contexts, press/release, rewrite, no 
  host.send({event:'keyUp',context:'K1',payload:{}});key('keyUp');
  a.equal((diagnostics.match(/"bridge":"accepted"/g)||[]).length,2,diagnostics);
  await fs.writeFile(file,fixture.replace('Moonfire','Changed Spell'));
- await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&decodeURIComponent(m.payload.image).includes('Changed Spell'));
+ await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&decodeURIComponent(m.payload.image).includes('>CS<'));
  await fs.writeFile(file,'broken fixture');await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&decodeURIComponent(m.payload.image).includes('#2b3844'));
  key('keyDown');key('keyUp');for(let i=0;i<100&&(diagnostics.match(/"bridge":"chord"/g)||[]).length<6;i++)await sleep(30);a.equal((diagnostics.match(/"bridge":"chord"/g)||[]).length,6);
  host.send({event:'didReceiveSettings',context:'K1',payload:{settings:{slot:99}}});
@@ -45,7 +45,7 @@ test('startup: no file yet -> keys fill when it appears; heartbeat re-sends drop
  host.send({event:'willAppear',action:'io.github.dinonuggolus.streonordock.key1',context:'K1',payload:{}});
  await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&decodeURIComponent(m.payload.image).includes('#2b3844'));
  await fs.writeFile(file,fixture);   // WoW writes the file later (first /reload)
- await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&decodeURIComponent(m.payload.image).includes('Moonfire'));
+ await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&decodeURIComponent(m.payload.image).includes('>M<'));
  // Heartbeat: identical image is re-sent even though nothing changed.
  const before=host.messages.filter(m=>m.event==='setImage'&&m.context==='K1').length;
  for(let i=0;i<100&&host.messages.filter(m=>m.event==='setImage'&&m.context==='K1').length<=before;i++)await sleep(50);
@@ -71,9 +71,10 @@ test('accepted press starts a plugin timer once (big countdown); repeat ignored;
  await host.wait(m=>m.event==='setImage'&&m.context==='K2');
  a.ok(!host.messages.some(m=>m.event==='setImage'&&m.context==='K2'&&img(m).includes('id="ic"')),'no timer before a press');
  host.send({event:'keyDown',context:'K2',payload:{}});host.send({event:'keyUp',context:'K2',payload:{}});
- const first=await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&img(m).includes('id="ic"'));a.match(img(first),/>2m</);
+ await sleep(1500);
+ // Timers/countdowns are no longer drawn on key tiles: a press never changes what the key shows.
  host.send({event:'keyDown',context:'K2',payload:{}});host.send({event:'keyUp',context:'K2',payload:{}});await sleep(1500);
- const last=[...host.messages].reverse().find(m=>m.event==='setImage'&&m.context==='K2');a.match(img(last),/>2m</,'repeat press did not restart: still counting down');
  host.send({event:'keyDown',context:'K3',payload:{}});host.send({event:'keyUp',context:'K3',payload:{}});await sleep(1200);
- a.ok(!host.messages.some(m=>m.event==='setImage'&&m.context==='K3'&&img(m).includes('id="ic"')),'unknown duration shows nothing');a.equal(stderr,'');
+ for(const c of ['K2','K3'])a.ok(!host.messages.some(m=>m.event==='setImage'&&m.context===c&&!img(m).includes('#2b3844')&&(img(m).includes('id="ic"')||/>\d+[mh]?</.test(img(m)))),c+' shows no countdown');
+ a.equal(stderr,'');
 });

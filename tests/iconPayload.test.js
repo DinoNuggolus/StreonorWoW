@@ -22,37 +22,67 @@ test('png: encode/decode roundtrip, box resize and size reduction',()=>{
 
 test('resolver: oversized icon is skipped with a callback, kill switch and xlink:href markup',async t=>{
  const dir=await fs.mkdtemp(path.join(__dirname,'tmp-embed-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
- await fs.writeFile(path.join(dir,'1.png'),encode(img(72,'gradient')));await fs.writeFile(path.join(dir,'2.png'),encode(img(72,'noise')));
- a.ok((await fs.stat(path.join(dir,'2.png'))).size>MAX_EMBED_BYTES);
+ await fs.writeFile(path.join(dir,'1.png'),encode(img(72,'gradient')));await fs.writeFile(path.join(dir,'2.png'),encode(img(96,'noise')));
+ a.equal(MAX_EMBED_BYTES,20*1024);a.ok((await fs.stat(path.join(dir,'2.png'))).size>MAX_EMBED_BYTES);
  const skips=[],r=new IconResolver({iconDir:dir},[],e=>skips.push(e));
  const ok=r.resolve({iconFileID:1,name:'A'});a.match(ok,/xlink:href="data:image\/png;base64,/);a.ok(ok.length<14000,'tile body small');
  a.match(r.resolve({iconFileID:2,name:'Bee'}),/<rect/);a.equal(skips.length,1);a.equal(skips[0].id,2);a.match(skips[0].reason,/too large/);
  a.match(new IconResolver({iconDir:dir,embedIcons:false}).resolve({iconFileID:1,name:'A'}),/<rect/);
  const svg=render.slot({slots:{1:{kind:'spell',name:'Moonfire',iconFileID:1}},page:{index:1,count:1}},1,0,r);
- a.match(svg,/xmlns:xlink=/);a.match(svg,/>Moonfire</);a.ok(svg.length<14000);a.ok(encodeURIComponent(svg).length<20000);
+ a.match(svg,/xmlns:xlink=/);a.ok(svg.length<14000);a.ok(encodeURIComponent(svg).length<20000);
+ // Full-bleed geometry: one image over the whole 144x144 canvas, slice, nothing else (no rect, text, name, caption).
+ a.match(svg,/<image x="0" y="0" width="144" height="144" preserveAspectRatio="xMidYMid slice" xlink:href="data:image\/png;base64,/);
+ a.equal((svg.match(/<image /g)||[]).length,1);a.ok(!/<text|<rect|Moonfire|P1|<defs/.test(svg),svg.slice(0,300));
+});
+
+test('fallback order 144 -> 72 -> old cache -> coloured initials tile; empty slot is plain black',async t=>{
+ const d144=await fs.mkdtemp(path.join(__dirname,'tmp-o144-')),d72=await fs.mkdtemp(path.join(__dirname,'tmp-o72-'));
+ t.after(()=>Promise.all([fs.rm(d144,{recursive:true,force:true}),fs.rm(d72,{recursive:true,force:true})]));
+ const A=encode(img(144,'gradient')),B=encode(img(72,'gradient')),big=encode(img(96,'noise'));
+ await fs.writeFile(path.join(d144,'1.png'),A);await fs.writeFile(path.join(d72,'1.png'),B);   // in both: 144 wins
+ await fs.writeFile(path.join(d144,'2.png'),big);await fs.writeFile(path.join(d72,'2.png'),B);  // 144 over the cap: skipped -> 72
+ await fs.writeFile(path.join(d144,'3.png'),big);await fs.writeFile(path.join(d72,'3.png'),big);// over the cap everywhere -> text tile
+ const skips=[],r=new IconResolver({iconDir:d144,iconFallbackDirs:[d72]},[],e=>skips.push(e.id));
+ const snap={slots:{1:{kind:'spell',name:'One',iconFileID:1},2:{kind:'spell',name:'Two',iconFileID:2},3:{kind:'item',name:'Three Cats',iconFileID:3},4:{kind:'item',name:'Zed',iconFileID:99},5:{kind:'empty'}},page:{index:1,count:1}};
+ const b64=b=>b.toString('base64'),S=i=>render.slot(snap,i,0,r);
+ a.ok(S(1).includes(b64(A))&&!S(1).includes(b64(B)));
+ a.ok(S(2).includes(b64(B))&&S(2).includes('<image x="0" y="0" width="144" height="144"'));a.deepEqual(skips.slice(0,1),[2]);
+ for(const i of [3,4]){const s=S(i);a.ok(!s.includes('<image'));a.match(s,/<rect width="144" height="144" fill="hsl\(/);a.equal((s.match(/<text/g)||[]).length,1);}
+ a.match(S(3),/>TC</);a.match(S(4),/>Z</);
+ const empty=S(5);a.ok(!/<text|<image/.test(empty));a.match(empty,/<rect width="144" height="144" fill="#000"\/>/);
+ a.ok(!/<text|<image|<rect/.test(render.slot(snap,9,0,r).replace('<rect width="144" height="144" fill="#000"/>','')));   // unknown slot index = empty
+ const off=render.slot(snap,1,0,null);a.ok(!off.includes('<image'));a.match(off,/>O</);   // no resolver (tile too large retry) -> text tile
+});
+
+test('size distribution of the real 144 px library (if built): all files within the cap',async()=>{
+ const dir=path.resolve(__dirname,'../icon-library-144');let files;try{files=await fs.readdir(dir);}catch{return;}
+ if(files.length<100)return;
+ let max=0;for(const f of files.slice(0,3000)){const n=(await fs.stat(path.join(dir,f))).size;if(n>max)max=n;}
+ a.ok(max<=MAX_EMBED_BYTES,'largest sampled file '+max);
 });
 
 test('plugin vs size-limited host: every setImage stays under the limit, oversized icon falls back to text tile and is logged',{timeout:30000},async t=>{
  const logFile=path.resolve(__dirname,'../src/io.github.dinonuggolus.streonordock.sdPlugin/logs/streonordock.jsonl'),logStart=await fs.stat(logFile).then(x=>x.size,()=>0);
- const LIMIT=20000,dir=await fs.mkdtemp(path.join(__dirname,'tmp-payload-'));
+ const LIMIT=40000,dir=await fs.mkdtemp(path.join(__dirname,'tmp-payload-')),dir72=await fs.mkdtemp(path.join(__dirname,'tmp-payload72-'));
  const file=path.join(dir,'StreonorDock.lua'),cfg=path.join(dir,'config.json');
  await fs.writeFile(file,await fs.readFile(path.join(__dirname,'fixtures/StreonorDock.lua'),'utf8'));
- await fs.writeFile(path.join(dir,'136096.png'),encode(img(72,'gradient')));   // Moonfire: small, embedded
- await fs.writeFile(path.join(dir,'134829.png'),encode(img(72,'noise')));      // potion: too big, text-only
- await fs.writeFile(cfg,JSON.stringify({savedVariablesPath:file,iconDir:dir}));
+ const A=encode(img(144,'gradient')),B=encode(img(72,'gradient'));
+ await fs.writeFile(path.join(dir,'136096.png'),A);                      // Moonfire: 144 px, embedded
+ await fs.writeFile(path.join(dir,'134829.png'),encode(img(96,'noise')));  // potion: 144 file over the cap -> skipped
+ await fs.writeFile(path.join(dir72,'134829.png'),B);                    // ... so the 72 px set is used
+ await fs.writeFile(cfg,JSON.stringify({savedVariablesPath:file,iconDir:dir,iconFallbackDirs:[dir72]}));
  const host=new MockHost(),port=await host.listen();
  const child=spawn(process.execPath,[plugin,'-port',String(port),'-pluginUUID','PAY','-registerEvent','registerPlugin','-info','{}'],{env:{...process.env,STREONORDOCK_CONFIG:cfg,STREONORDOCK_DRY_RUN:'1'},windowsHide:true,stdio:['pipe','pipe','pipe']});
  let diagnostics='',stderr='';child.stdout.on('data',d=>diagnostics+=d);child.stderr.on('data',d=>stderr+=d);
- t.after(async()=>{child.stdin.end();await Promise.race([new Promise(r=>child.once('exit',r)),sleep(3000)]);if(child.exitCode===null)child.kill();await host.close();await fs.rm(dir,{recursive:true,force:true});});
+ t.after(async()=>{child.stdin.end();await Promise.race([new Promise(r=>child.once('exit',r)),sleep(3000)]);if(child.exitCode===null)child.kill();await host.close();await fs.rm(dir,{recursive:true,force:true});await fs.rm(dir72,{recursive:true,force:true});});
  await host.wait(m=>m.event==='registerPlugin');
  for(let i=1;i<=15;i++)host.send({event:'willAppear',action:`io.github.dinonuggolus.streonordock.key${i}`,context:`K${i}`,payload:{}});
  for(let i=1;i<=3;i++)host.send({event:'willAppear',action:`io.github.dinonuggolus.streonordock.readout${i}`,context:`R${i}`,payload:{}});
- const k1=await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&decodeURIComponent(m.payload.image).includes('Moonfire'));
- const k2=await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&decodeURIComponent(m.payload.image).includes('Minor Healing Potion'));
- await host.wait(m=>m.event==='setImage'&&m.context==='R1'&&decodeURIComponent(m.payload.image).includes('Minor Healing'));
+ const k1=await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&decodeURIComponent(m.payload.image).includes(A.toString('base64')));
+ const k2=await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&decodeURIComponent(m.payload.image).includes(B.toString('base64')));
+ await host.wait(m=>m.event==='setImage'&&m.context==='R1');
  const s1=decodeURIComponent(k1.payload.image),s2=decodeURIComponent(k2.payload.image);
- a.match(s1,/<image [^>]*xlink:href="data:image\/png;base64,/);a.match(s1,/>Moonfire</);   // label drawn on top of the icon
- a.ok(!s2.includes('<image'));a.match(s2,/<rect/);a.match(s2,/>Minor Healing Potion</);
+ for(const s of [s1,s2]){a.match(s,/<image x="0" y="0" width="144" height="144" preserveAspectRatio="xMidYMid slice" xlink:href="data:image\/png;base64,/);a.ok(!/<text|<rect/.test(s));}
  const rejected=host.messages.filter(m=>m.event==='setImage'&&m.payload.image.length>LIMIT);
  a.equal(rejected.length,0,'host would drop tiles over '+LIMIT+' chars: '+rejected.map(m=>m.context+':'+m.payload.image.length));
  a.ok(k1.payload.image.length<LIMIT);

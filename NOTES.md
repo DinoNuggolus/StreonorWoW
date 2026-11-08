@@ -230,3 +230,12 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
 
 ## 2026-11-08 spell timers (plugin side)
 - Reader parses cooldown fields for spells; PressTimers/render accept kind 'spell' (keys `spell:<id>`), maxCharges>1 = no timer. 81 plugin tests.
+
+## 2026-11-08 icon-only full-bleed keys + 144 px library
+- `lib/render.js` `tile()`: icon fills the whole 144x144 (slice); no rect, text, caption or cooldown. Empty = black tile. Unresolved or over-cap icon = coloured initials tile. The old overlay renderer is kept as `legacySlot` (sweep/timers/presentation tests use it); plugin timers are no longer drawn.
+- `lib/icons.js`: new `uri()` (first usable data URI) used by tile(); `resolve()` (inset image) kept for readouts. `MAX_EMBED_BYTES` 12 KB -> 20 KB. Order 144 -> 72 -> old cache -> initials; over-cap files skipped with `iconSkipped`.
+- `scripts/png.js`: median-cut palette PNG encoder (`encodePalette`, `shrinkPalette`). `build-icon-library.js --size 144` writes `icon-library-144` (256 colours; ladder 256/192/128/96/64/32, target 14 KB, cap 20 KB; a file that cannot fit is not written, so the 72 px set is used).
+- Result: 30,386 files, 309.1 MiB, min 114 B, median 10,784 B, p90 12,617, p99 13,909, max 14,336; 0 over 20 KB, 0 over 16 KB (130 s).
+- config: `iconDir` = icon-library-144; `iconFallbackDirs` = [icon-library, icon-cache].
+- Tests: full-bleed geometry (one image, 0,0,144,144, slice, no text/rect), fallback order 144->72->text tile, empty black tile, size cap, real-library size sample. Old name/countdown host tests updated. 88 tests pass on Node 20.8.1.
+- Verify: restart Streonor; keys show bare icons; a slot with a bogus ID shows a coloured initials tile.

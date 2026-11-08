@@ -2,12 +2,19 @@
 const fs=require('node:fs'),path=require('node:path');
 const MAX_ICON_BYTES=512*1024;
 // Embedded icons must stay small: the whole tile is one data-URI setImage message and hosts have been
-// seen to blank tiles (text included) when it is large. Build scripts shrink icons to ~72px (< 9 KB).
-const MAX_EMBED_BYTES=12*1024;
+// seen to blank tiles (text included) when it is large. Build scripts make 144 px palette PNGs (~11 KB,
+// hard cap 20 KB) and a 72 px fallback set (< 12 KB). Over-cap files are skipped and the next dir is tried.
+const MAX_EMBED_BYTES=20*1024;
 const esc=v=>(typeof v==='string'?v:'').slice(0,100).replace(/[\x00-\x1f\x7f]/g,'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
-function fallback(name){
+function nameParts(name){
  name=typeof name==='string'?name.slice(0,100):'?';let h=2166136261;for(const c of name)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;
  const initials=name.trim().split(/\s+/).slice(0,2).map(w=>Array.from(w)[0]||'').join('').toUpperCase()||'?';
+ return {h,initials};
+}
+// Full-bleed tile for a filled slot whose icon is missing: plain colour + initials (the only text a key may show).
+function fallbackTile(name){const {h,initials}=nameParts(name);return `<rect width="144" height="144" fill="hsl(${h%360},45%,30%)"/><text x="72" y="92" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="56" fill="white">${esc(initials)}</text>`;}
+function fallback(name){
+ const {h,initials}=nameParts(name);
  return `<rect x="8" y="20" width="128" height="88" rx="16" fill="hsl(${h%360},45%,30%)"/><text x="72" y="78" text-anchor="middle" font-size="34" fill="white">${esc(initials)}</text>`;
 }
 // Local SVG uses a deliberately small inert shape subset. No scripts, CSS, entities,
@@ -24,9 +31,11 @@ const image=uri=>`<image x="8" y="20" width="128" height="88" xlink:href="${uri}
 class IconResolver{
  constructor(config={},sources=[],onSkip=()=>{}){this.dir=config.iconDir||path.join(__dirname,'..','icons');this.dirs=[this.dir,...(Array.isArray(config.iconFallbackDirs)?config.iconFallbackDirs.filter(d=>typeof d==='string'&&d):[])];this.sources=sources;this.enabled=config.embedIcons!==false;this.onSkip=onSkip;}
  skip(slot,reason,bytes){try{this.onSkip({id:slot.iconFileID,reason,bytes});}catch{}}
- resolve(slot={}){
-  if(!this.enabled)return fallback(slot.name);
-  for(const source of this.sources){try{const result=source(slot);if(typeof result==='string'&&result.length<=MAX_EMBED_BYTES*2&&/^data:image\/(png|jpeg);base64,[a-zA-Z0-9+/=]+$/.test(result))return image(result);}catch{}}
+ resolve(slot={}){const uri=this.uri(slot);return uri?image(uri):fallback(slot.name);}
+ // Data URI of the first usable icon: sources, then each dir in order (144 px set, 72 px set, old cache). null = none.
+ uri(slot={}){
+  if(!this.enabled)return null;
+  for(const source of this.sources){try{const result=source(slot);if(typeof result==='string'&&result.length<=MAX_EMBED_BYTES*2&&/^data:image\/(png|jpeg);base64,[a-zA-Z0-9+/=]+$/.test(result))return result;}catch{}}
   const id=slot.iconFileID;if(Number.isInteger(id)&&id>0&&id<=2147483647){
    for(const dir of this.dirs)for(const ext of ['png','jpg','svg']){let fd;try{
     fd=fs.openSync(path.join(dir,`${id}.${ext}`),'r');const st=fs.fstatSync(fd);if(!st.isFile())continue;if(st.size>MAX_EMBED_BYTES){this.skip(slot,'icon file too large',st.size);continue;}
@@ -34,10 +43,10 @@ class IconResolver{
     if(ext==='svg'&&!safeSvg(bytes.toString('utf8')))continue;
     if(ext==='png'&&!bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))continue;
     if(ext==='jpg'&&(bytes[0]!==255||bytes[1]!==216))continue;
-    const mime=ext==='jpg'?'jpeg':ext==='svg'?'svg+xml':'png';return image(`data:image/${mime};base64,${bytes.toString('base64')}`);
+    const mime=ext==='jpg'?'jpeg':ext==='svg'?'svg+xml':'png';return `data:image/${mime};base64,${bytes.toString('base64')}`;
    }catch{}finally{if(fd!==undefined)fs.closeSync(fd);}}
   }
-  return fallback(slot.name);
+  return null;
  }
 }
-module.exports={IconResolver,fallback,esc,MAX_ICON_BYTES,MAX_EMBED_BYTES};
+module.exports={IconResolver,fallback,fallbackTile,esc,MAX_ICON_BYTES,MAX_EMBED_BYTES};

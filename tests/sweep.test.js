@@ -7,7 +7,7 @@ const URI='data:image/png;base64,AAAAAAAA';
 const resolver={resolve:()=>`<image x="8" y="20" width="128" height="88" xlink:href="${URI}"/>`};
 const mk=d=>({kind:'item',id:1,name:'Potion',cooldownSeconds:d,cooldownSource:'table',iconFileID:1});
 const snap=item=>({savedAt:1,mtimeMs:1,page:{index:1,count:1},slots:{1:item},readouts:{}});
-function at(duration,elapsed){const c={t:1e6},t=new PressTimers(()=>c.t),item=mk(duration);t.start(item);c.t+=elapsed*1000;return {svg:render.slot(snap(item),1,c.t,resolver,t),t,item};}
+function at(duration,elapsed){const c={t:1e6},t=new PressTimers(()=>c.t),item=mk(duration);t.start(item);c.t+=elapsed*1000;return {svg:render.legacySlot(snap(item),1,c.t,resolver,t),t,item};}
 const PATH=/M(-?[0-9.]+) (-?[0-9.]+)L(-?[0-9.]+) (-?[0-9.]+)A([0-9]+) ([0-9]+) 0 ([0-9]) ([0-9]) (-?[0-9.]+) (-?[0-9.]+)Z/;
 const TAU=2*Math.PI,clockwise=(cx,cy,x,y)=>{const t=Math.atan2(x-cx,-(y-cy));return t<0?t+TAU:t;};
 // Parses a generated clip shape and returns {fraction, contains(angleFraction)} computed from the real path data.
@@ -57,11 +57,11 @@ test('OmniCC time text: seconds under 90, minutes from 90 s, hours from 90 min; 
  for(const [l,e] of [[0.2,'1'],[1,'1'],[1.01,'2'],[6,'6'],[59.4,'60'],[89,'89'],[89.5,'89'],[90,'2m'],[91,'2m'],[120,'2m'],[120.1,'3m'],[1800,'30m'],[5399,'90m'],[5400,'2h'],[7200,'2h'],[7201,'3h'],[86400,'24h']])a.equal(t(l),e,String(l));
  for(const l of [0,-1,NaN,Infinity])a.equal(t(l)===''||l===Infinity,true);
  const c={t:1e6},tm=new PressTimers(()=>c.t),item=mk(1800);tm.start(item);
- const svg=render.slot(snap(item),1,c.t,resolver,tm);a.match(svg,/>30m</);a.match(svg,/font-size="42"/);a.ok(!/[0-9]:[0-9][0-9]/.test(svg.replace(/data:[^"]*/,'')));
+ const svg=render.legacySlot(snap(item),1,c.t,resolver,tm);a.match(svg,/>30m</);a.match(svg,/font-size="42"/);a.ok(!/[0-9]:[0-9][0-9]/.test(svg.replace(/data:[^"]*/,'')));
 });
 test('no icon: text tile gets the same big number and gray sweep',()=>{
  const c={t:1e6},t=new PressTimers(()=>c.t),item=mk(60);t.start(item);c.t+=30000;
- const svg=render.slot(snap(item),1,c.t,{resolve:i=>require('../src/io.github.dinonuggolus.streonordock.sdPlugin/lib/icons').fallback(i.name)},t);
+ const svg=render.legacySlot(snap(item),1,c.t,{resolve:i=>require('../src/io.github.dinonuggolus.streonordock.sdPlugin/lib/icons').fallback(i.name)},t);
  a.match(svg,/<g id="ic"><rect[^>]*hsl/);a.match(svg,/>30</);a.match(svg,/clip-path="url\(#pie\)"/);
 });
 test('zero, negative, huge and invalid durations never produce NaN or a timer',()=>{
@@ -69,11 +69,11 @@ test('zero, negative, huge and invalid durations never produce NaN or a timer',(
  for(const d of [0,-5,1,NaN,Infinity,86401,'60',null])a.equal(t.start(mk(d)),false);
  a.equal(render.progressOf(-5,100),1);a.equal(render.progressOf(5,0),0);a.equal(render.progressOf(NaN,10),0);a.equal(render.progressOf(200,100),0);
  const {svg}=at(86400,1);a.ok(!/NaN|undefined|Infinity/.test(svg));a.match(svg,/>24h</);
- const neg=render.slot(snap(mk(60)),1,1e6,resolver,{info:()=>({left:-3,total:60})});a.ok(!neg.includes('<defs>'));
+ const neg=render.legacySlot(snap(mk(60)),1,1e6,resolver,{info:()=>({left:-3,total:60})});a.ok(!neg.includes('<defs>'));
 });
 test('export end time (running at save) also gets the sweep, using cooldownSeconds as the total',()=>{
  const item={...mk(120),endsAt:1090,source:'game'},s={savedAt:1000,mtimeMs:0,page:{index:1,count:1},slots:{1:item},readouts:{}};
- const svg=render.slot(s,1,0,resolver);a.match(svg,/>2m</);a.match(svg,/clip-path="url\(#pie\)"/);
+ const svg=render.legacySlot(s,1,0,resolver);a.match(svg,/>2m</);a.match(svg,/clip-path="url\(#pie\)"/);
 });
 test('redraw cadence: slow normally, fast only at <=10s left, configurable; idle = slow',()=>{
  const c=cadence({});a.deepEqual(c,{slow:1000,fast:500,within:10});

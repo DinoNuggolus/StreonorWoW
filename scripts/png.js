@@ -111,5 +111,55 @@ function encode(img, shift = 0) {
   return Buffer.concat([MAGIC, chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(Buffer.concat(rows), { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
 }
 
+
+// Palette (colour type 3) encode with median-cut quantisation, no dithering. Alpha is composited on black.
+// Icons are opaque, so this is lossless-looking at 256 colours and several times smaller than RGB.
+function quantise(img, ncolors) {
+  const { width: w, height: h, data } = img, n = w * h, bins = new Map();
+  const rgb = new Uint8Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const a = data[i * 4 + 3] / 255;
+    for (let c = 0; c < 3; c++) rgb[i * 3 + c] = Math.round(data[i * 4 + c] * a);
+    const key = ((rgb[i * 3] >> 3) << 10) | ((rgb[i * 3 + 1] >> 3) << 5) | (rgb[i * 3 + 2] >> 3);
+    let b = bins.get(key); if (!b) bins.set(key, b = { r: 0, g: 0, b: 0, n: 0, key });
+    b.r += rgb[i * 3]; b.g += rgb[i * 3 + 1]; b.b += rgb[i * 3 + 2]; b.n++;
+  }
+  let boxes = [[...bins.values()]];
+  const range = (box, c) => { let lo = 255, hi = 0; for (const e of box) { const v = e[c] / e.n; if (v < lo) lo = v; if (v > hi) hi = v; } return hi - lo; };
+  while (boxes.length < ncolors) {
+    let bi = -1, bs = 0, bc = 'r';
+    boxes.forEach((box, i) => { if (box.length < 2) return; for (const c of ['r', 'g', 'b']) { const s = range(box, c) * Math.sqrt(box.reduce((t, e) => t + e.n, 0)); if (s > bs) { bs = s; bi = i; bc = c; } } });
+    if (bi < 0) break;
+    const box = boxes[bi].sort((p, q) => p[bc] / p.n - q[bc] / q.n), tot = box.reduce((t, e) => t + e.n, 0);
+    let acc = 0, cut = 1; for (let i = 0; i < box.length - 1; i++) { acc += box[i].n; cut = i + 1; if (acc >= tot / 2) break; }
+    boxes.splice(bi, 1, box.slice(0, cut), box.slice(cut));
+  }
+  const pal = boxes.map(box => { let r = 0, g = 0, b = 0, t = 0; for (const e of box) { r += e.r; g += e.g; b += e.b; t += e.n; } return [Math.round(r / t), Math.round(g / t), Math.round(b / t)]; });
+  const cache = new Map(), idx = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    const r = rgb[i * 3], g = rgb[i * 3 + 1], b = rgb[i * 3 + 2], key = (r << 16) | (g << 8) | b;
+    let k = cache.get(key);
+    if (k === undefined) { let best = 1e9; k = 0; for (let j = 0; j < pal.length; j++) { const d = (pal[j][0] - r) ** 2 + (pal[j][1] - g) ** 2 + (pal[j][2] - b) ** 2; if (d < best) { best = d; k = j; } } cache.set(key, k); }
+    idx[i] = k;
+  }
+  return { pal, idx };
+}
+function encodePalette(img, ncolors = 256) {
+  const { width: w, height: h } = img, { pal, idx } = quantise(img, Math.max(2, Math.min(256, ncolors)));
+  const rows = [];
+  for (let y = 0; y < h; y++) {
+    let best = null, bestScore = Infinity;
+    for (const f of [0, 1, 2]) {
+      const row = Buffer.alloc(w + 1); row[0] = f; let score = 0;
+      for (let x = 0; x < w; x++) { const a = x ? idx[y * w + x - 1] : 0, b = y ? idx[(y - 1) * w + x] : 0, p = f === 1 ? a : f === 2 ? b : 0, d = (idx[y * w + x] - p) & 255; row[x + 1] = d; score += d < 128 ? d : 256 - d; }
+      if (score < bestScore) { bestScore = score; best = row; }
+    }
+    rows.push(best);
+  }
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 3;
+  return Buffer.concat([MAGIC, chunk('IHDR', ihdr), chunk('PLTE', Buffer.from(pal.flat())), chunk('IDAT', zlib.deflateSync(Buffer.concat(rows), { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
+}
+const shrinkPalette = (buf, size, ncolors = 256) => encodePalette(resize(decode(buf), size), ncolors);
+
 const shrink = (buf, size, shift = 0) => encode(resize(decode(buf), size), shift);
-module.exports = { decode, resize, encode, shrink, crc32 };
+module.exports = { decode, resize, encode, shrink, encodePalette, shrinkPalette, crc32 };

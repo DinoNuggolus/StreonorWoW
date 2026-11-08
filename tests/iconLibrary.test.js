@@ -65,16 +65,16 @@ test('runtime flow: export rewrite -> plugin re-reads slots -> icon looked up by
  await host.wait(m=>m.event==='registerPlugin');
  for(let i=1;i<=2;i++)host.send({event:'willAppear',action:`io.github.dinonuggolus.streonordock.key${i}`,context:`K${i}`,payload:{}});
  const b64=buf=>buf.toString('base64'),svg=m=>decodeURIComponent(m.payload.image);
- const k1=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&svg(m).includes('Moonfire')));
- a.ok(k1.includes(b64(A)),'slot 1 shows library icon 136096');a.match(k1,/>Moonfire</);
- const k2=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&svg(m).includes('Minor Healing')));
+ const k1=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&svg(m).includes(b64(A))));
+ a.ok(k1.includes(b64(A)),'slot 1 shows library icon 136096');a.ok(!/<text/.test(k1));
+ const k2=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&svg(m).includes(b64(C))));
  a.ok(k2.includes(b64(C)),'slot 2 shows fallback-dir icon 134829');
  // /reload: addon writes a new export. Slot 1 now holds a new spell with icon 999001; slot 2 a never-seen ID.
  await fs.writeFile(file,fixture.replace('["name"]="Moonfire", ["iconFileID"]=136096','["name"]="NewSpell", ["iconFileID"]=999001').replace('["iconFileID"]=134829, ["chord"]','["iconFileID"]=777777, ["chord"]'));
- const n1=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&svg(m).includes('NewSpell')));
+ const n1=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&svg(m).includes(b64(B))));
  a.ok(n1.includes(b64(B))&&!n1.includes(b64(A)),'slot 1 switched to the new library icon');
- const n2=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&svg(m).includes('Minor Healing')&&!svg(m).includes(b64(C))));
- a.ok(!n2.includes('<image'));a.match(n2,/<rect/);a.match(n2,/>Minor Healing Potion</);   // missing icon -> text tile
+ const n2=svg(await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&svg(m).includes('>MH<')));
+ a.ok(!n2.includes('<image'));a.match(n2,/<rect/);a.ok(!n2.includes(b64(C)));   // missing icon -> text tile
  a.equal(stderr,'');
 });
 
@@ -83,6 +83,6 @@ test('shipped plugin never touches the network and reads icons only from configu
  for(const f of ['lib/icons.js','lib/render.js','plugin/index.js']){const code=await fs.readFile(path.join(root,f),'utf8');
   a.doesNotMatch(code,/require\(['"]node:(https?|net|dns|dgram|tls)['"]\)|require\(['"](https?|net|dns)['"]\)|fetch\(|XMLHttpRequest/,f);}
  const cfg=JSON.parse(await fs.readFile(path.join(root,'plugin','config.json'),'utf8'));
- a.match(cfg.iconDir,/icon-library$/);a.ok(cfg.iconFallbackDirs.some(x=>/icon-cache$/.test(x)));
+ a.match(cfg.iconDir,/icon-library-144$/);const fb=cfg.iconFallbackDirs.map(x=>path.win32.basename(x));a.deepEqual(fb.slice(0,2),['icon-library','icon-cache']);   // order: 144 px, 72 px, old cache
  a.match(await fs.readFile(path.join(__dirname,'..','.gitignore'),'utf8'),/^icon-library\/$/m);
 });

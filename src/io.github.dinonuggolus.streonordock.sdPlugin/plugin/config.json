@@ -1,7 +1,7 @@
 {
   "savedVariablesPath": "",
   "gamePath": "G:\\World of Warcraft\\_forever_",
-  "iconDir": "G:\\WoWFOREVER_ADDONS\\StreonorWoW\\icon-library",
+  "iconDir": "G:\\WoWFOREVER_ADDONS\\StreonorWoW\\icon-library-144",
   "embedIcons": true,
   "gameProcess": "Wow.exe",
   "deleteLogsOnLogout": true,
@@ -9,6 +9,7 @@
   "showEstimateMarker": false,
   "logDir": "",
   "iconFallbackDirs": [
+    "G:\\WoWFOREVER_ADDONS\\StreonorWoW\\icon-library",
     "G:\\WoWFOREVER_ADDONS\\StreonorWoW\\icon-cache"
   ]
 }

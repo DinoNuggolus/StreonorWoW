@@ -77,6 +77,6 @@ test('argument parsing rejects unknown flags and missing values',()=>{
 
 test('shipped plugin config points at the private cache outside the plugin folder',()=>{
  const cfg=JSON.parse(fs.readFileSync(path.join(__dirname,'..','src','io.github.dinonuggolus.streonordock.sdPlugin','plugin','config.json'),'utf8'));
- a.ok(path.win32.isAbsolute(cfg.iconDir));a.match(cfg.iconDir,/icon-library$/);
+ a.ok(path.win32.isAbsolute(cfg.iconDir));a.match(cfg.iconDir,/icon-library-144$/);
  const gi=fs.readFileSync(path.join(__dirname,'..','.gitignore'),'utf8');a.match(gi,/^icon-cache\/$/m);a.match(gi,/^\*\.png$/m);
 });

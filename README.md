@@ -137,25 +137,38 @@ No icon files are bundled yet; coloured initial tiles are expected. A community 
 maps FileDataIDs to names only: it does not supply the images. Obtain pictures separately
 under suitable permissions and copy them locally; the plugin never downloads anything.
 
+### Key look: icon only, full-bleed (144 px library)
+
+A key with an icon draws ONLY the icon, full-bleed over the whole 144x144 tile (`preserveAspectRatio="xMidYMid slice"`):
+no border, inset, name, `P1 . 1` caption, count badge, cooldown or timer. The press timers still exist in code but are no
+longer drawn on key tiles (`legacySlot` in `lib/render.js` keeps the old overlay renderer for its tests).
+- Empty slot: fully black tile, nothing on it.
+- Filled slot whose icon cannot be found or is over the size cap: plain full-bleed coloured tile with the first letters
+  of the name. This is the only text a key can show, so a missing icon is noticed.
+- No snapshot yet: the neutral placeholder is unchanged. Money/currency readouts keep their own layout.
+
 ### Full icon library (automatic icons, no per-icon step)
 
-`icon-library\` holds one 72 px PNG (<= 9.5 KB) for every icon in the community pack that the
-wow-listfile maps to a FileDataID: `icon-library\<FileDataID>.png` (30,386 files, ~240 MiB). It sits
-next to the repo, outside the plugin folder, so `deploy-plugin.ps1` (`robocopy /MIR`) never copies or
-wipes it, and it is git-ignored (Blizzard artwork: never commit or publish). `plugin\config.json` sets
-`iconDir` to it and keeps the older `icon-cache\` as `iconFallbackDirs` so nothing regresses.
+Two sets, both outside the plugin folder (so `deploy-plugin.ps1` never copies or wipes them) and git-ignored (Blizzard
+artwork: never commit or publish), one `<FileDataID>.png` per pack icon the listfile maps (30,386 each):
+- `icon-library-144/` (`iconDir`): 144 px, 256-colour palette PNGs, median ~10.8 KB, max ~14 KB, hard cap 20 KB (~309 MiB).
+- `icon-library/` (first `iconFallbackDirs` entry): the 72 px set (<= 9.5 KB, ~240 MiB); then the older `icon-cache/`.
 
-Runtime flow (all local, no network, no AI): `/reload` in game -> the addon rewrites
-`StreonorDock.lua` -> the plugin sees the changed file and re-reads the slots -> for each slot it looks up
-`<iconFileID>.png` in `icon-library` (then the fallback dirs) -> draws it under the label. An ID that is
-not in the library gets the coloured text/initials tile. Restart Streonor once after deploying;
-afterwards just put any item or spell on a button and `/reload`.
+Lookup order per slot: 144 px, then 72 px, then old cache, then the coloured initials tile. A file over 20 KB
+(`MAX_EMBED_BYTES` in `lib/icons.js`) is skipped (logged as `iconSkipped`) and the next directory is tried, so a tile is
+never blank. The plugin also redraws a tile text-only if its encoded message would exceed 40,000 characters (earlier
+~50-75 KB payloads blanked tiles).
 
-Rebuild or extend (incremental, skips valid existing files, prints unresolved):
-`node scripts\build-icon-library.js` (needs the pack in `_staging\icon-pack\png\png_icons` and
-`_staging\listfile\community-listfile.csv`; options `--pack --listfile --library --workers N --force`).
-Check the current export: `node scripts\check-icons.js` lists every slot icon ID as OK or MISSING.
-Icons the pack lacks (3,499 listfile IDs have no pack file, mostly newer art) fall back to text tiles.
+Runtime flow (all local, no network, no AI): `/reload` in game -> the addon rewrites `StreonorDock.lua` -> the plugin sees
+the changed file and re-reads the slots -> looks up `<iconFileID>.png` as above -> draws it. Restart Streonor once after
+deploying; afterwards just put any item or spell on a button and `/reload`.
+
+Rebuild or extend (incremental, skips valid existing files, prints unresolved; no npm dependencies):
+`node scripts\build-icon-library.js --size 144` (144 px set) and `node scripts\build-icon-library.js` (72 px set). Needs the
+pack in `_staging\icon-pack\png\png_icons` and `_staging\listfile\community-listfile.csv`; options
+`--size 72|144 --pack --listfile --library --workers N --force`. Check the current export: `node scripts\check-icons.js`
+(pass `--dir` once per directory). Icons the pack lacks (3,499 listfile IDs have no pack file, mostly newer art) fall back
+to the initials tile.
 
 ### Populating icons from the community pack (older per-export cache; superseded by the library)
 

@@ -1,5 +1,5 @@
 'use strict';
-const {fallback,esc}=require('./icons');
+const {fallback,fallbackTile,esc}=require('./icons');
 const readoutBody=require('./readout').body;
 const bounded=(v,max)=>typeof v==='number'&&Number.isFinite(v)?Math.max(0,Math.min(v,max)):0;
 const text=(v,y,size=16,color='#fff')=>`<text x="72" y="${y}" text-anchor="middle" font-family="Arial" font-size="${size}" fill="${color}">${esc(String(v))}</text>`;
@@ -51,9 +51,21 @@ function cooling(iconBody,left,total){
   (todo?`<g clip-path="url(#rest)"><use xlink:href="#ic" filter="url(#gr)" opacity=".6"/><rect x="8" y="20" width="128" height="88" rx="16" fill="#000" opacity=".3"/></g>`:'')+
   numberText(clock(left));
 }
-// Missing/corrupt data draws neutral tiles (no banner); the reason is logged by the plugin.
+// Bare tile: no background rect, so nothing but the given body is visible.
+const bare=body=>`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144">${body}</svg>`;
+const bleed=uri=>`<image x="0" y="0" width="144" height="144" preserveAspectRatio="xMidYMid slice" xlink:href="${uri}"/>`;
+// Key tiles: ONLY the icon, full-bleed over the whole 144x144 canvas (no border, inset, label, caption, badge,
+// cooldown or timer). Empty slot = fully black tile. Filled slot with no resolvable icon = plain coloured tile
+// with initials, so a missing icon is noticed. No snapshot at all keeps the neutral placeholder.
 function tile(s,item,index,now,resolver,timers){
  if(!s)return frame(text('·',84,40,'#2b3844')+text(String(index),140,11,'#4a5a69'));
+ item=item||{kind:'empty'};
+ if(item.kind==='empty')return bare('<rect width="144" height="144" fill="#000"/>');
+ const uri=resolver&&typeof resolver.uri==='function'?resolver.uri(item):null;
+ return bare(uri?bleed(uri):fallbackTile(item.name));
+}
+// Retired: inset icon with cooldown overlay, name and caption. Unused by tile(); kept for reference/tests.
+function legacyTile(s,item,index,now,resolver,timers){
  item=item||{kind:'empty'};let body='';
  if(item.kind==='empty')body=text('EMPTY',74,20,'#8996a2');
  else{
@@ -71,6 +83,7 @@ function tile(s,item,index,now,resolver,timers){
  body+=text(`P${Math.floor(bounded(s.page?.index,10))} · ${index}`,140,11,'#aabbcc');return frame(body);
 }
 const slot=(s,i,now=Date.now(),resolver,timers)=>tile(s,s?.slots?.[i],i,now,resolver,timers);
+const legacySlot=(s,i,now=Date.now(),resolver,timers)=>s?legacyTile(s,s.slots?.[i],i,now,resolver,timers):tile(s,null,i);
 // est = {estimator, marker}: money/currency readouts show the saved value plus chat-log gains since the save.
 function readout(s,i,now=Date.now(),resolver,timers,est){
  const entry=s?.readouts?.[i];
@@ -81,4 +94,4 @@ function readout(s,i,now=Date.now(),resolver,timers,est){
  return tile(s,entry,i,now,resolver,timers);
 }
 function status(s){return frame(text('StreonorDock',s?60:78,s?20:22)+(s?text(`Page ${s.page.index}/${s.page.count}`,100,26):''));}
-module.exports={slot,readout,status,remaining,clock,wedge,rest,progressOf};
+module.exports={slot,legacySlot,readout,status,remaining,clock,wedge,rest,progressOf};
