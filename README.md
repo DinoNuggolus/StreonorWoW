@@ -224,3 +224,24 @@ Honest limits: a press the game refuses (item not ready, out of range, dead, no 
 start a false timer; the planned fix is an optional combat-log confirmation (not built). The timer
 lives in plugin memory and is lost when the plugin restarts. Lengths are only as good as the
 addon's learned/shipped data.
+
+## Chat/combat log cleanup
+
+The addon turns on the client's own chat and combat file logging (see the StreonorDock README). Those
+files (`Logs\WoWChatLog*.txt`, `Logs\WoWCombatLog*.txt`) grow quickly and contain other players' chat, so
+the plugin deletes them for privacy once the game is done with them.
+
+- Config (`plugin/config.json`): `deleteLogsOnLogout` (default `true`; set `false` to turn this off) and
+  `logDir` (default `<gamePath>\Logs`).
+- **Deleted:** only regular files directly inside that one directory whose names match exactly
+  `^WoW(Chat|Combat)Log.*\.txt$`. Never any other file, never a directory, never anything in a subfolder;
+  symlinks/junctions are not followed and the file's real path must stay inside the directory.
+- **When:** at plugin start, and whenever the saved data file gets a newer modification time (the
+  "logout detected" signal; `/reload` also rewrites it). Files are only deleted while **no Wow.exe process
+  is running**: the relay counts processes by name (`Get-Process -Name Wow`, count only, no handle to the
+  game is opened); if the check fails the plugin assumes the game is running. If anything is pending
+  (game still running, or Windows refuses because WoW still holds a file: EBUSY/EPERM/EACCES), it retries
+  every 30 s on one timer that stops once nothing is pending. A refused delete is never an error.
+- **Caveat:** because deletion waits for the game to exit, logs stay readable for the whole session and
+  disappear after you quit WoW (while the plugin is running).
+- Each attempt is logged to `streonordock.jsonl` as counts only (`deleted`, `busy`, `skipped`, `errors`).

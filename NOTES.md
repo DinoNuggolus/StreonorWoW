@@ -188,3 +188,8 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
   (learned/verified/table only); plugin lib/pressTimers.js starts a timer on an accepted press.
 - Removed the small USED / CD ? / "Ns est" labels; only the big countdown remains. Tests: tests/timers.test.js
   (injected clock) + host test with a dry-run accepted press.
+
+## 2026-11-08 log cleanup
+- lib/logCleanup.js + relay `procCount` command (process-name count only). Chose "never delete while Wow.exe runs,
+  unknown = running" over relying on unlink success alone, because a game that opened the log with share-delete
+  would otherwise lose a live log mid-session. Tests: tests/logCleanup.test.js (temp dirs, fake io, plugin dry-run).

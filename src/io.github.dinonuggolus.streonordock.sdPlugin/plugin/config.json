@@ -3,5 +3,7 @@
   "gamePath": "G:\\World of Warcraft\\_forever_",
   "iconDir": "G:\\WoWFOREVER_ADDONS\\StreonorWoW\\icon-cache",
   "embedIcons": true,
-  "gameProcess": "Wow.exe"
+  "gameProcess": "Wow.exe",
+  "deleteLogsOnLogout": true,
+  "logDir": ""
 }
