@@ -35,3 +35,9 @@ test('age uses older timestamp, configurable stale threshold and clamps future a
  const stat=await fs.stat(fixture);const r=new ExportReader({savedVariablesPath:fixture,staleAfterSeconds:10},{now:()=>stat.mtimeMs+11000});await r.poll();a.equal(r.view().stale,true);a.ok(r.view().ageSeconds>=11);
  const future=new ExportReader({savedVariablesPath:fixture},{now:()=>0});await future.poll();a.equal(future.view().ageSeconds,0);a.equal(future.view().stale,false);
 });
+test('default stale threshold is 12 hours, not minutes',async()=>{
+ const stat=await fs.stat(fixture);
+ const r=new ExportReader({savedVariablesPath:fixture},{now:()=>stat.mtimeMs+3600*1000});await r.poll();
+ const v=r.view();a.equal(v.stale,false);a.ok(v.ageSeconds>=3600);
+ const r2=new ExportReader({savedVariablesPath:fixture},{now:()=>stat.mtimeMs+13*3600*1000});await r2.poll();a.equal(r2.view().stale,true);
+});

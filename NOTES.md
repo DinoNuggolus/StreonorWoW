@@ -139,3 +139,13 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
 - plugin/config.json iconDir = absolute icon-cache path (deploy /MIR copies src config; cache untouched).
 - .gitignore: icon-cache/ and image/zip types (the two pre-existing tracked plugin icon.png unaffected).
 - Unverified: how icons look on real S15 hardware.
+
+## 2026-11-07 STALE redesign
+- Cause of "red STALE after a while": the snapshot is the SavedVariables file, which WoW writes
+  only on /reload or logout, so any play session ages it past the old 10 min threshold.
+- Now: red banner only for missing/corrupt/schema-mismatch (NO SNAPSHOT) or age > staleAfterSeconds
+  (default 43200 = 12 h, OLD SNAPSHOT <age>). Otherwise a muted "saved 14m" label (>= 1 min) on
+  key/readout/status tiles; Status keeps the full "Age" line. ~N estimates, cooldown timers
+  (absolute endsAt anchored to savedAt+mtime) and key sending are unchanged.
+- The same file is also all the controller can show right after login: it holds the last
+  logout/reload's data until the next save.

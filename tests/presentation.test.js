@@ -20,8 +20,20 @@ test('render server clock mapping, countdown expiry, source and unknown labels',
  s.slots[1]={kind:'spell',endsAt:1120,source:'est'};a.ok(!render.slot(s,1,2010000).includes('110s'));
 });
 test('honest missing, stale, status, empty and escape/clamp',()=>{
- a.match(render.slot(null,1),/NO DATA/);a.match(render.slot(null,1),/STALE/);
+ a.match(render.slot(null,1),/NO DATA/);a.match(render.slot(null,1),/NO SNAPSHOT/);
  const s={savedAt:1,mtimeMs:1000,ageSeconds:999,stale:true,page:{index:1,count:1},slots:{1:{kind:'item',name:'<&"',count:1e99}},readouts:{}};
  a.match(render.slot(s,1),/&lt;&amp;&quot;/);a.match(render.slot(s,1),/999999/);a.match(render.slot(s,2),/EMPTY/);a.match(render.slot(s,1),/OLD SNAPSHOT/);
  const status=render.status(s);for(const v of ['SAVED SNAPSHOT','P1 / 1','16m','OLD SNAPSHOT'])a.ok(status.includes(v),v);
+});
+test('in-session age is a muted label, not a red banner; long age or missing data warns',()=>{
+ const base={savedAt:1,mtimeMs:1000,page:{index:1,count:1},slots:{1:{kind:'item',name:'Potion',count:3,endsAt:2000,source:'game'}},readouts:{}};
+ const fresh={...base,ageSeconds:840,stale:false};const svg=render.slot(fresh,1,1000+840000);
+ a.match(svg,/saved 14m/);a.ok(!svg.includes('#853131'));a.ok(!svg.includes('SNAPSHOT 14'));
+ a.match(render.status(fresh),/saved 14m/);a.match(render.status(fresh),/Age 14m/);
+ a.ok(!render.slot({...base,ageSeconds:30,stale:false},1).includes('saved '));
+ const old=render.slot({...base,ageSeconds:13*3600,stale:true},1);a.match(old,/OLD SNAPSHOT 13h/);a.ok(!old.includes('saved '));
+ a.match(render.slot(null,1),/NO SNAPSHOT/);
+ // cooldown end times are absolute: remaining() is unaffected by display age
+ a.equal(render.remaining(base.slots[1],base,1000+100000),1899);
+ const est={...base,ageSeconds:840,stale:false,slots:{1:{kind:'item',name:'P',count:3,countEstimated:true}}};a.match(render.slot(est,1),/~3/);
 });

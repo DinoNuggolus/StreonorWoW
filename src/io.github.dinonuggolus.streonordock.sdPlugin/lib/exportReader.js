@@ -46,6 +46,6 @@ class ExportReader {
    }
   }catch(e){this.snapshot=null;this.signature=null;this.error=String(e.message).slice(0,200);return previous!==null;}
  }
- view(){if(!this.snapshot)return null;const s=this.snapshot,now=this.now();const ageSeconds=Math.max(0,(now-s.mtimeMs)/1000,now/1000-s.savedAt);const limit=num(this.config.staleAfterSeconds,86400*365)??600;return {...s,ageSeconds,stale:ageSeconds>limit};}
+ view(){if(!this.snapshot)return null;const s=this.snapshot,now=this.now();const ageSeconds=Math.max(0,(now-s.mtimeMs)/1000,now/1000-s.savedAt);const limit=num(this.config.staleAfterSeconds,86400*365)??43200;return {...s,ageSeconds,stale:ageSeconds>limit};}
 }
 module.exports={ExportReader,normalize,cleanSlot};

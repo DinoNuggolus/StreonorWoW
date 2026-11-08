@@ -22,7 +22,7 @@ writes are restricted to that plugin folder's `logs/`. Tests use authored fixtur
    Recommended initial layout: Dock Readout 1 at (5,0), Dock Readout 2 at (5,1), Dock Status
    at (5,2). Swap Status for Readout 3 to see all three items, or use a second Streonor profile
    layout. Stock system-monitor widgets remain swappable in any Information region.
-6. Without a saved export, `NO DATA / STALE` is expected. With a character, set up the
+6. Without a saved export, `NO DATA` + a red `NO SNAPSHOT` banner is expected. With a character, set up the
    StreonorDock addon and `/reload` or logout. Images should update within a polling interval.
    Buttons send fixed chords even with missing or stale data; focus must be Wow.exe.
 
@@ -39,7 +39,7 @@ There is no property inspector and action settings cannot remap keys.
 | `savedVariablesPath` | empty | Explicit account-wide snapshot file; never written |
 | `gamePath` | `G:\World of Warcraft\_forever_` | Auto-detect beneath `WTF/Account/*/SavedVariables/StreonorDock.lua`; newest mtime wins |
 | `iconDir` | empty | Plugin `icons/`; an absolute alternative or path relative to plugin root |
-| `staleAfterSeconds` | 600 | Age threshold; nonnegative finite number, bounded at 365 days |
+| `staleAfterSeconds` | 43200 (12 h) | Age beyond which the red OLD SNAPSHOT banner appears (shorter ages only show a muted "saved 14m" label); nonnegative finite number, bounded at 365 days |
 | `consumableItemIds` | `[]` | Explicit IDs of items consumed on use; only these get press-count estimates |
 | `gameProcess` | `Wow.exe` | Foreground process filename; compared case-insensitively, no window-title matching |
 
@@ -94,7 +94,7 @@ Files copied/restored with fresh mtimes can shift cooldown anchors; do a fresh `
 Timestamp precision, save delay, and clock skew make the mapping approximate.
 
 Keys/readouts show page badges and OLD SNAPSHOT above the threshold; missing/invalid data
-shows NO DATA and STALE. Status always says SAVED SNAPSHOT and shows page and age.
+shows NO DATA and a red NO SNAPSHOT banner. Ordinary age (the file only changes on /reload or logout) is a small muted "saved 14m" label from 1 minute on, never a banner. Status always says SAVED SNAPSHOT and shows page and age.
 Player gold/bag fields are parsed but deliberately not used for the three **item** readouts.
 
 ## Input behavior
@@ -167,7 +167,7 @@ committed or published (`.gitignore` blocks `icon-cache/` and all image/zip type
    release before the next press. Confirm rapidly overlapping buttons are refused as documented.
 3. `/reload`: verify icons/counts, page number and snapshot age. Change pages out of combat,
    `/reload`, verify exported page matches; pager keys remain addon bindings.
-4. Leave export untouched beyond staleAfterSeconds: OLD SNAPSHOT. Missing/invalid export:
+4. Export older than staleAfterSeconds (12 h default): red OLD SNAPSHOT <age>. Missing/invalid export:
    NO DATA. Verify chord sending still works in both states.
 5. With a cooldown item, use it then save: displayed countdown follows exported end time,
    `game`/`est` label remains visible, reaches zero, and a later save corrects it. With unknown
