@@ -222,3 +222,8 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
 - Known gaps: no spend/vendor/mail/quest lines yet (no chat format verified). Tests: tests/currency.test.js.
 - Pre-existing: running node --test directly fails 4 chords/relay tests under the default PowerShell execution policy;
   scripts/run-tests.ps1 (-ExecutionPolicy Bypass) passes.
+
+## 2026-11-08 sweep fix + OmniCC text
+- Bug: the colour copy was layered over a gray copy, so semi-transparent icon pixels blended with gray and the wedge looked ~25% (path geometry itself was right: verified with isPointInFill). Now each region is drawn once: colour clipped to the elapsed wedge, gray (+dim) clipped to the remaining wedge (`render.wedge/rest`).
+- Verified by rasterizing the preview in Chrome (per-octant saturation equals the ready icon exactly inside the elapsed wedge). Tests parse the generated clip paths and assert covered fraction + partition for 0/5/25/50/75/95/99/100%.
+- `clock()` is now 89 / 2m (>=90 s) / 2h (>=90 min); font 54, 42 for 3 chars. 78 plugin tests.

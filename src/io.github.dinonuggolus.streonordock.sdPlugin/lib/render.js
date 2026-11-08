@@ -10,8 +10,14 @@ function remaining(item,s,now=Date.now()){
  // save or copied file shifts the anchor. endsAt is absolute, so the countdown is correct at any age.
  const elapsed=Math.max(0,(now-s.mtimeMs)/1000);return bounded(item.endsAt-s.savedAt-elapsed,86400);
 }
-// Big centered countdown over the icon: seconds up to 99, m:ss above.
-function clock(left){const n=Math.ceil(left);return n>99?`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`:String(n);}
+// OmniCC-style text: whole seconds (rounded up, no suffix) under 90 s; whole minutes ('2m') from 90 s;
+// whole hours ('2h') from 90 minutes. Never m:ss.
+function clock(left){
+ if(!Number.isFinite(left)||left<=0)return '';
+ if(left>=5400)return `${Math.ceil(left/3600)}h`;
+ if(left>=90)return `${Math.ceil(left/60)}m`;
+ return String(Math.max(1,Math.min(89,Math.ceil(left))));
+}
 // OmniCC-style cooldown on the icon. The icon (or the text-tile fallback) is defined ONCE in <defs> and
 // drawn twice with <use>: a desaturated, dimmed copy, and a full-colour copy clipped to the elapsed
 // clockwise pie wedge that starts at 12 o'clock. A dim rect keeps the state obvious if a renderer
@@ -19,22 +25,31 @@ function clock(left){const n=Math.ceil(left);return n>99?`${Math.floor(n/60)}:${
 const CX=72,CY=64,R=80;   // covers the 128x88 icon box centred on (72,64)
 const progressOf=(left,total)=>Number.isFinite(left)&&Number.isFinite(total)&&total>0?Math.max(0,Math.min(1,1-left/total)):0;
 const f2=n=>Number(n.toFixed(2));
-// Clip shape for the elapsed fraction p of a full turn. p<=0 -> null (nothing coloured yet).
-function wedge(p){
- if(!(p>0))return null;
- if(p>=1)return `<circle cx="${CX}" cy="${CY}" r="${R}"/>`;
- const a=2*Math.PI*p,x=CX+R*Math.sin(a),y=CY-R*Math.cos(a);
- return `<path d="M${CX} ${CY}L${CX} ${CY-R}A${R} ${R} 0 ${p>0.5?1:0} 1 ${f2(x)} ${f2(y)}Z"/>`;
+// Each region is drawn ONCE: full colour inside the elapsed wedge, gray (+dim) inside the remaining wedge.
+// (Layering colour over gray lets an icon's semi-transparent pixels blend with gray and look washed out.)
+// Arc: from 12 o'clock clockwise by fraction p of a turn; large-arc flag set when the arc exceeds 180 degrees.
+function sector(from,to){          // fractions of a turn clockwise from 12 o'clock, 0 <= from < to <= 1
+ const a=2*Math.PI*to,x=CX+R*Math.sin(a),y=CY-R*Math.cos(a),b=2*Math.PI*from,x0=CX+R*Math.sin(b),y0=CY-R*Math.cos(b);
+ return `<path d="M${CX} ${CY}L${f2(x0)} ${f2(y0)}A${R} ${R} 0 ${to-from>0.5?1:0} 1 ${f2(x)} ${f2(y)}Z"/>`;
+}
+const circle=`<circle cx="${CX}" cy="${CY}" r="${R}"/>`;
+function wedge(p){       // elapsed part: null when nothing elapsed, a full circle when done
+ if(!(p>0))return null;if(p>=1)return circle;return sector(0,p);
+}
+function rest(p){        // remaining part: complement of wedge(p)
+ if(!(p>0))return circle;if(p>=1)return null;return sector(p,1);
 }
 function numberText(label){
- const size=label.length>4?32:label.length>3?40:label.length>2?46:54;
+ const size=label.length>=3?42:54;
  return `<text x="72" y="${f2(CY+size*0.35)}" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="${size}" fill="#fff" stroke="#000" stroke-width="5" stroke-linejoin="round" paint-order="stroke">${esc(label)}</text>`;
 }
 function cooling(iconBody,left,total){
- const clip=wedge(progressOf(left,total));
- return `<defs><g id="ic">${iconBody}</g><filter id="gr" x="0" y="0" width="1" height="1"><feColorMatrix type="saturate" values="0"/></filter>${clip?`<clipPath id="pie">${clip}</clipPath>`:''}</defs>`+
-  `<use xlink:href="#ic" filter="url(#gr)" opacity=".6"/><rect x="8" y="20" width="128" height="88" rx="16" fill="#000" opacity=".3"/>`+
-  (clip?`<use xlink:href="#ic" clip-path="url(#pie)"/>`:'')+numberText(clock(left));
+ const p=progressOf(left,total),done=wedge(p),todo=rest(p);
+ return `<defs><g id="ic">${iconBody}</g><filter id="gr" x="0" y="0" width="1" height="1"><feColorMatrix type="saturate" values="0"/></filter>`+
+  (done?`<clipPath id="pie">${done}</clipPath>`:'')+(todo?`<clipPath id="rest">${todo}</clipPath>`:'')+`</defs>`+
+  (done?`<use xlink:href="#ic" clip-path="url(#pie)"/>`:'')+
+  (todo?`<g clip-path="url(#rest)"><use xlink:href="#ic" filter="url(#gr)" opacity=".6"/><rect x="8" y="20" width="128" height="88" rx="16" fill="#000" opacity=".3"/></g>`:'')+
+  numberText(clock(left));
 }
 // Missing/corrupt data draws neutral tiles (no banner); the reason is logged by the plugin.
 function tile(s,item,index,now,resolver,timers){
@@ -66,4 +81,4 @@ function readout(s,i,now=Date.now(),resolver,timers,est){
  return tile(s,entry,i,now,resolver,timers);
 }
 function status(s){return frame(text('StreonorDock',s?60:78,s?20:22)+(s?text(`Page ${s.page.index}/${s.page.count}`,100,26):''));}
-module.exports={slot,readout,status,remaining,clock,wedge,progressOf};
+module.exports={slot,readout,status,remaining,clock,wedge,rest,progressOf};

@@ -24,8 +24,8 @@ test('big countdown overlay at 119/60/59/1 seconds, none at 0, no banner text',(
  const c=clockOf(),t=new PressTimers(c.now);const s={savedAt:1,mtimeMs:1,page:{index:1,count:1},slots:{1:potion},readouts:{}};
  const shown=()=>render.slot(s,1,c.t,null,t);
  a.ok(!shown().includes('font-size="56"')&&!shown().includes('id="ic"'));
- t.start(potion);c.t+=0;a.match(shown(),/>2:00</);
- c.t=1000000+1000;a.match(shown(),/>1:59</);
+ t.start(potion);c.t+=0;a.match(shown(),/>2m</);
+ c.t=1000000+1000;a.match(shown(),/>2m</);
  c.t=1000000+60000;a.match(shown(),/>60</);
  c.t=1000000+61000;a.match(shown(),/>59</);
  c.t=1000000+119000;a.match(shown(),/>1</);

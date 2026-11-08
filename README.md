@@ -236,7 +236,7 @@ arrive through it. The plugin therefore starts its own timer:
   plugin starts a countdown (absolute end time = now + length) shared by the `poolKey` (or the item).
   A press while that timer runs does not restart or extend it.
 - While running, the key shows a big yellow number centered over the icon on a dark translucent
-  backdrop: seconds up to 99, then `m:ss` (`1:59`). It clears at zero. The shared redraw tick already
+  backdrop: seconds under 90, `2m` from 90 s, `2h` from 90 min. It clears at zero. The shared redraw tick already
   runs once a second only while actions are visible.
 - A cooldown that was running when the game saved (`endsAt`) is still shown for the remainder.
 
@@ -270,7 +270,7 @@ the plugin deletes them for privacy once the game is done with them.
 
 While an item timer runs, the key icon is desaturated and dimmed; a clockwise pie wedge starting at
 12 o'clock restores full colour as time elapses; a big white number with a dark outline is centred
-over the icon (seconds up to 99, then `m:ss`). When the timer ends the plain icon returns. The icon is
+over the icon (OmniCC text: seconds under 90, then whole minutes `2m` from 90 s, whole hours `2h` from 90 min; never `m:ss`). When the timer ends the plain icon returns. The icon is
 embedded once in `<defs>` and drawn twice with `<use>` (gray copy with an `feColorMatrix` saturate
 filter, colour copy clipped by the wedge), so the payload stays at one icon; a translucent dim rect keeps
 the state visible if a renderer ignores the filter. Keys without an icon use the same treatment on the
