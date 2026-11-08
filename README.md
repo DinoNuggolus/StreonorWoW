@@ -134,6 +134,29 @@ No icon files are bundled yet; coloured initial tiles are expected. A community 
 maps FileDataIDs to names only: it does not supply the images. Obtain pictures separately
 under suitable permissions and copy them locally; the plugin never downloads anything.
 
+### Populating icons from the community pack (private local cache)
+
+The shipped config sets `iconDir` to `G:\WoWFOREVER_ADDONS\StreonorWoW\icon-cache` (outside the
+plugin folder, so `deploy-plugin.ps1`'s `/MIR` never wipes it). Steps:
+
+1. One-time downloads into `G:\WoWFOREVER_ADDONS\_staging\` (git-ignored, user-approved):
+   the pack `png_icons.zip` from github.com/qcy-hash/wow-forever-icons-png (v1.0.0, 1.73 GiB,
+   extracted to `icon-pack\png\png_icons\`; 30,386 PNGs named by icon name, 256x256) and
+   `community-listfile.csv` from github.com/wowdev/wow-listfile (147 MB) in `listfile\`.
+2. Run: `node scripts\build-icon-cache.js --listfile ..\_staging\listfile\community-listfile.csv`
+   It reads every `iconFileID` in your newest `StreonorDock.lua` (read-only), maps ID to icon
+   name via the listfile, copies only those PNGs to `icon-cache\<ID>.png`, skips existing files
+   and prints resolved/unresolved IDs. The pack is never modified. Options: `--ids file.txt`,
+   `--export path`, `--pack dir`, `--cache dir`, `--dry-run`.
+3. Restart Streonor. Keys/readouts show the real icons; slots with no cached file keep the
+   coloured initial tile.
+4. New slots/items later: log in, `/reload` so the addon re-exports, re-run step 2, restart
+   Streonor.
+
+Licensing: the artwork is Blizzard's, redistributed by the pack author for personal,
+non-commercial use. `icon-cache/`, the pack and the listfile stay local and must never be
+committed or published (`.gitignore` blocks `icon-cache/` and all image/zip types).
+
 ## Staged verification when a character exists
 
 1. Start with starter spell on key 1, bag item on key 2/readout 1; run `/sdock probe` and

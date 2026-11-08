@@ -2,3 +2,14 @@ state/
 _backups/
 logs/
 *.zip
+
+# Icons / Blizzard art must never be committed (private local cache only)
+icon-cache/
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.blp
+*.tga
+*.zip

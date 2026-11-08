@@ -128,3 +128,14 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
 - No staging/commit, deployment, device/game input, game/WTF edits or addon repo edits.
   Real S15 rendering, real SendInput and game consumption remain unverified. Manager review
   and consumable ID configuration remain before deployment; no consumables assumed by default.
+
+## 2026-11-07 Icon cache from community pack
+- Pack qcy-hash/wow-forever-icons-png v1.0.0 (png_icons.zip 1,854,471,605 B) extracted to
+  _staging/icon-pack/png/png_icons: 30,386 PNG named by icon name, 256x256, max 132 KB < plugin
+  512 KiB limit (no downscale, icons.js unchanged). Zip checked: no traversal, only .png.
+- ID->name map: community-listfile.csv (147 MB) downloaded to _staging/listfile after user OK.
+- scripts/build-icon-cache.js (+8 tests in tests/buildIconCache.test.js). Real run: 6 IDs in the
+  export (132794, 132845, 133975, 134414, 1029587, 5172975): 6 copied, 0 unresolved.
+- plugin/config.json iconDir = absolute icon-cache path (deploy /MIR copies src config; cache untouched).
+- .gitignore: icon-cache/ and image/zip types (the two pre-existing tracked plugin icon.png unaffected).
+- Unverified: how icons look on real S15 hardware.
