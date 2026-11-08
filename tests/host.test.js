@@ -56,3 +56,25 @@ test('startup: no file yet -> keys fill when it appears; heartbeat re-sends drop
  await Promise.race([exited,sleep(8000)]);
  a.match(diagnostics,/"bridge":"disconnected"/,diagnostics);a.ok(!diagnostics.includes('"bridge":"fatal"'),diagnostics);a.equal(child.exitCode,0);
 });
+
+test('accepted press starts a plugin timer once (big countdown); repeat ignored; unknown duration draws nothing', {timeout:30000},async t=>{
+ const dir=await fs.mkdtemp(path.join(__dirname,'tmp-timer-'));const file=path.join(dir,'StreonorDock.lua'),cfg=path.join(dir,'config.json');
+ const fixture=(await fs.readFile(path.join(__dirname,'fixtures/StreonorDock.lua'),'utf8')).replace('["extra"]="ignored"','["cooldownSeconds"]=120,["cooldownSource"]="table",["poolKey"]="pool:potion"');
+ await fs.writeFile(file,fixture);await fs.writeFile(cfg,JSON.stringify({savedVariablesPath:file}));
+ const host=new MockHost(),port=await host.listen();
+ const child=spawn(process.execPath,[plugin,'-port',String(port),'-pluginUUID','TIMER','-registerEvent','registerPlugin','-info','{}'],{env:{...process.env,STREONORDOCK_CONFIG:cfg,STREONORDOCK_DRY_RUN:'1'},windowsHide:true,stdio:['pipe','pipe','pipe']});
+ let stderr='';child.stderr.on('data',d=>stderr+=d);
+ t.after(async()=>{child.stdin.end();await Promise.race([new Promise(r=>child.once('exit',r)),sleep(3000)]);if(child.exitCode===null)child.kill();await host.close();await fs.rm(dir,{recursive:true,force:true});});
+ await host.wait(m=>m.event==='registerPlugin');
+ for(const i of [2,3])host.send({event:'willAppear',action:`io.github.dinonuggolus.streonordock.key${i}`,context:`K${i}`,payload:{}});
+ const img=m=>decodeURIComponent(m.payload.image);
+ await host.wait(m=>m.event==='setImage'&&m.context==='K2');
+ a.ok(!host.messages.some(m=>m.event==='setImage'&&m.context==='K2'&&img(m).includes('#ffd23f')),'no timer before a press');
+ host.send({event:'keyDown',context:'K2',payload:{}});host.send({event:'keyUp',context:'K2',payload:{}});
+ const first=await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&img(m).includes('#ffd23f'));a.match(img(first),/>(2:00|1:59)</);
+ host.send({event:'keyDown',context:'K2',payload:{}});host.send({event:'keyUp',context:'K2',payload:{}});await sleep(1500);
+ a.ok(!host.messages.some(m=>m.event==='setImage'&&m.context==='K2'&&/>2:00</.test(img(m))&&m!==first&&host.messages.indexOf(m)>host.messages.indexOf(first)+2&&false));
+ const last=[...host.messages].reverse().find(m=>m.event==='setImage'&&m.context==='K2');a.match(img(last),/>1:(5|4)\d<|>(2:00|1:59)</,'repeat press did not restart: still counting down');
+ host.send({event:'keyDown',context:'K3',payload:{}});host.send({event:'keyUp',context:'K3',payload:{}});await sleep(1200);
+ a.ok(!host.messages.some(m=>m.event==='setImage'&&m.context==='K3'&&img(m).includes('#ffd23f')),'unknown duration shows nothing');a.equal(stderr,'');
+});

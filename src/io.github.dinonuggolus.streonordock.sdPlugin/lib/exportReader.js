@@ -9,6 +9,8 @@ function cleanSlot(raw,readout=false){
  const out={kind:x.kind};for(const k of [readout?'itemID':'id','iconFileID']){const v=integer(x[k],2147483647);if(v>0)out[k]=v;}
  if(typeof x.name==='string')out.name=x.name.slice(0,100).replace(/[\x00-\x1f\x7f]/g,'');
  if(x.kind==='item'){
+  const secs=num(x.cooldownSeconds,86400);
+  if(secs>1.5&&['learned','verified','table'].includes(x.cooldownSource)){out.cooldownSeconds=secs;out.cooldownSource=x.cooldownSource;if(typeof x.poolKey==='string'&&/^[A-Za-z0-9_:]{1,64}$/.test(x.poolKey))out.poolKey=x.poolKey;}
   if(['game','est','used'].includes(x.source)){out.source=x.source;const end=num(x.endsAt,1e11);if(x.source!=='used'&&end!==undefined)out.endsAt=end;}
  }
  return out;

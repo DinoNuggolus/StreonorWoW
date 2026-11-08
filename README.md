@@ -201,3 +201,26 @@ committed or published (`.gitignore` blocks `icon-cache/` and all image/zip type
   task permission. The readable spike and scratchpad mock, SDK and new tests informed this build.
 - Fresh reviewer delegation failed in the tool service; final review was by the implementing agent.
   This does not replace project-manager review. No deployment, profile edit, git write or push occurred.
+
+## Cooldown timers (press-started, plugin-side)
+
+The saved data file only changes when the game saves, so a cooldown that starts mid-session can never
+arrive through it. The plugin therefore starts its own timer:
+
+- The addon exports, per item slot, the cooldown length it already knows: `cooldownSeconds`,
+  `cooldownSource` (`learned` | `verified` | `table`) and, for items sharing a lock, `poolKey`
+  (e.g. `pool:potion`). Unknown length = nothing exported = no timer. Spells get no timer (their
+  cooldowns are sealed in combat). Extra fields are tolerated by schema 1.
+- When the sender **accepts** a physical press (same one-press-one-chord rule; repeats, refused,
+  unfocused, conflict and failed sends are not accepted) on an item slot with a known length, the
+  plugin starts a countdown (absolute end time = now + length) shared by the `poolKey` (or the item).
+  A press while that timer runs does not restart or extend it.
+- While running, the key shows a big yellow number centered over the icon on a dark translucent
+  backdrop: seconds up to 99, then `m:ss` (`1:59`). It clears at zero. The shared redraw tick already
+  runs once a second only while actions are visible.
+- A cooldown that was running when the game saved (`endsAt`) is still shown for the remainder.
+
+Honest limits: a press the game refuses (item not ready, out of range, dead, no target) can still
+start a false timer; the planned fix is an optional combat-log confirmation (not built). The timer
+lives in plugin memory and is lost when the plugin restarts. Lengths are only as good as the
+addon's learned/shipped data.

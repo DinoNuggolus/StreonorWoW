@@ -15,14 +15,14 @@ test('fallback stable, escaped, bounded; local cache and size rejection',t=>{
 test('render server clock mapping, countdown expiry, source and unknown labels',()=>{
  const s={savedAt:1000,mtimeMs:2000000,page:{index:2,count:3},slots:{1:{kind:'item',name:'Potion',count:4,endsAt:1120,source:'est'}},readouts:{1:{kind:'item',source:'used'}}};
  a.equal(render.remaining(s.slots[1],s,2010000),110);a.equal(render.remaining(s.slots[1],s,2200000),0);
- const svg=render.slot(s,1,2010000);for(const text of ['110s','est','P2','Potion'])a.ok(svg.includes(text),text);
- a.match(render.readout(s,1,2010000),/USED/);s.slots[1].endsAt=undefined;a.match(render.slot(s,1,2010000),/CD \?/);
- s.slots[1]={kind:'spell',endsAt:1120,source:'est'};a.ok(!render.slot(s,1,2010000).includes('110s'));
+ const svg=render.slot(s,1,2010000);for(const text of ['>1:50<','P2','Potion'])a.ok(svg.includes(text),text);
+ a.ok(!render.readout(s,1,2010000).includes('USED'));s.slots[1].endsAt=undefined;a.ok(!render.slot(s,1,2010000).includes('#ffd23f'));
+ s.slots[1]={kind:'spell',endsAt:1120,source:'est'};a.ok(!render.slot(s,1,2010000).includes('#ffd23f'));
 });
 test('no snapshot presentation: neutral tiles, no banners, age labels or counts; status shows page',()=>{
  const s={savedAt:1,mtimeMs:1000,page:{index:2,count:3},slots:{1:{kind:'item',name:'<&"',count:77,endsAt:2000,source:'game'}},readouts:{}};
  const none=render.slot(null,1);for(const bad of ['NO DATA','STALE','SNAPSHOT','saved','#853131'])a.ok(!none.includes(bad),bad);
- const svg=render.slot(s,1,1000+100000);a.match(svg,/&lt;&amp;&quot;/);a.match(svg,/1899s game/);a.ok(!svg.includes('>77<')&&!svg.includes('~'));
+ const svg=render.slot(s,1,1000+100000);a.match(svg,/&lt;&amp;&quot;/);a.match(svg,/>31:39</);a.ok(!svg.includes('>77<')&&!svg.includes('~'));
  for(const bad of ['SNAPSHOT','STALE','saved ','#853131'])a.ok(!svg.includes(bad),bad);
  a.match(render.slot(s,2),/EMPTY/);
  const st=render.status(s);a.match(st,/Page 2.3/);a.match(st,/StreonorDock/);for(const bad of ['Age','SNAPSHOT','STALE'])a.ok(!st.includes(bad),bad);

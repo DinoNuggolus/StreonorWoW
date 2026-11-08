@@ -181,3 +181,10 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
 - Tests: tests/iconPayload.test.js (png codec, resolver skip/kill switch, real plugin vs size-limited
   mock host). Full run: Node 26.13.0 and 20.8.1 pass. Unverified on real S15 hardware: if tiles are
   still blank after a Streonor restart, set embedIcons:false to isolate (text should return).
+
+## 2026-11-08 press-started plugin timers
+- Root cause of "no timer ever": timers only reached the plugin via the saved file (written at
+  /reload or logout) and slots carried no cooldown fields. Addon now exports cooldownSeconds/Source/poolKey
+  (learned/verified/table only); plugin lib/pressTimers.js starts a timer on an accepted press.
+- Removed the small USED / CD ? / "Ns est" labels; only the big countdown remains. Tests: tests/timers.test.js
+  (injected clock) + host test with a dry-run accepted press.
