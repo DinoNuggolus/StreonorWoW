@@ -46,7 +46,7 @@ test('name-based pack resolves through a listfile (case-insensitive); non-icons 
  const ids=path.join(d,'ids.txt');fs.writeFileSync(ids,'100 200 300 400');
  a.deepEqual([...loadListfile(list,new Set([100,200,300]))],[[100,'inv_misc_food_01'],[200,'missing_icon']]);
  const r=build({pack,cache,idsFile:ids,listfile:list});
- a.deepEqual(r.copied,[{id:100,via:'name'}]);a.deepEqual(r.unresolved.map(x=>x.id),[200,300,400]);
+ a.deepEqual(r.copied.map(x=>[x.id,x.via]),[[100,'name']]);a.deepEqual(r.unresolved.map(x=>x.id),[200,300,400]);
 });
 
 test('rejects non-PNG and oversize files; dry run writes nothing',t=>{

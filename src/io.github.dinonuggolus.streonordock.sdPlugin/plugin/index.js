@@ -10,7 +10,7 @@ async function main(){
  for(const k of ['savedVariablesPath','gamePath','iconDir','gameProcess'])if(typeof config[k]!=='string'||config[k].length>4096)delete config[k];
  if(config.iconDir&&!path.isAbsolute(config.iconDir))config.iconDir=path.resolve(__dirname,'..',config.iconDir);
  if(config.gameProcess&&!/^[a-zA-Z0-9_.-]+(?:\.exe)?$/.test(config.gameProcess))delete config.gameProcess;
- const reader=new ExportReader(config),icons=new IconResolver(config),contexts=new Map(),held=new Set();let timer=null,busy=false,stopping=false,lastError='';
+ const reader=new ExportReader(config),icons=new IconResolver(config,[],e=>log('iconSkipped',e)),contexts=new Map(),held=new Set();let timer=null,busy=false,stopping=false,lastError='';
  let pressId=0;
  const dry=process.env.STREONORDOCK_DRY_RUN==='1';
  const relayArgs=['-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(__dirname,'sender.ps1'),'-Port',options.port,'-GameProcess',config.gameProcess||'Wow.exe','-ParentPid',String(process.pid)];if(dry)relayArgs.push('-DryRun');
@@ -20,7 +20,9 @@ async function main(){
  function flushImages(){if(stopping||bridge.stdin.destroyed)return;while(pendingImages.size&&bridge.stdin.writableLength<65536){const [context,value]=pendingImages.entries().next().value;pendingImages.delete(context);command({kind:'send',message:JSON.stringify(value)});}}
  bridge.stdin.on('drain',flushImages);
  function send(value){if(value.event==='setImage'){pendingImages.set(value.context,value);flushImages();}else command({kind:'send',message:JSON.stringify(value)});}
- function draw(context,entry){const s=reader.view();const svg=entry.type==='key'?render.slot(s,entry.index,Date.now(),icons):entry.type==='readout'?render.readout(s,entry.index,Date.now(),icons):render.status(s);if(svg===entry.last)return;entry.last=svg;send({event:'setImage',context,payload:{target:0,image:'data:image/svg+xml;charset=utf8,'+encodeURIComponent(svg)}});}
+ const MAX_TILE_CHARS=40000;
+ const encodeTile=svg=>'data:image/svg+xml;charset=utf8,'+encodeURIComponent(svg);
+ function draw(context,entry){const s=reader.view();const make=r=>entry.type==='key'?render.slot(s,entry.index,Date.now(),r):entry.type==='readout'?render.readout(s,entry.index,Date.now(),r):render.status(s);let svg=make(icons),image=encodeTile(svg);if(image.length>MAX_TILE_CHARS){log('tileTooLarge',{type:entry.type,index:entry.index,chars:image.length});svg=make(null);image=encodeTile(svg);}if(svg===entry.last)return;entry.last=svg;send({event:'setImage',context,payload:{target:0,image}});}
  const redrawMs=Math.max(50,Number(process.env.STREONORDOCK_REDRAW_MS)||30000);let lastFull=Date.now(),firstLogged=false;
  // Heartbeat: forget what we last sent so every visible action is re-sent. Without this a host that dropped an image (page/profile switch, sleep, app restart) stays blank until the snapshot changes.
  async function tick(){if(busy||stopping)return;busy=true;try{const changed=await reader.poll();if(changed&&reader.snapshot){log('snapshotLoaded',{file:path.basename(reader.file||''),savedAt:reader.snapshot.savedAt,page:reader.snapshot.page,filled:Object.values(reader.snapshot.slots).filter(x=>x.kind!=='empty').length});}

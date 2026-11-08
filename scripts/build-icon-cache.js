@@ -2,18 +2,19 @@
 'use strict';
 // Build the private icon cache for the StreonorDock plugin.
 //
-//   node scripts/build-icon-cache.js [--pack <dir>] [--cache <dir>] [--export <StreonorDock.lua>]
+//   node scripts/build-icon-cache.js [--pack <dir>] [--cache <dir>] [--export <StreonorDock.lua>] [--size 72] [--force]
 //                                    [--ids <file>] [--listfile <csv>] [--dry-run]
 //
 // Reads every iconFileID from the StreonorDock SavedVariables export (read-only), plus an optional
 // ID list file (numbers separated by whitespace/commas, # comments), finds each icon in the
-// community pack (read-only) and COPIES only the needed ones to <cache>/<ID>.png. Existing cache
-// files are skipped. The pack is never modified or deleted from. Blizzard artwork stays local:
+// community pack (read-only) and writes only the needed ones, shrunk to --size px (default 72, 0 = no
+// resize; the plugin refuses cache files > 12 KB), to <cache>/<ID>.png. Existing small cache files are skipped. The pack is never modified or deleted from. Blizzard artwork stays local:
 // the cache folder is git-ignored and must never be committed or published.
 //
 // Pack layout (auto-detected): files named <FileDataID>.png are used directly; files named by icon
 // name (inv_misc_food_01.png) need --listfile (wow-listfile community-listfile.csv, "FileDataID;path").
 const fs = require('node:fs'), path = require('node:path');
+const { shrink } = require('./png');
 const { parse } = require('../src/io.github.dinonuggolus.streonordock.sdPlugin/lib/luatable');
 
 const ROOT = path.join(__dirname, '..');
@@ -22,7 +23,9 @@ const DEFAULTS = {
   cache: path.join(ROOT, 'icon-cache'),
   gamePath: 'G:\\World of Warcraft\\_forever_',
 };
-const MAX_ICON_BYTES = 512 * 1024; // keep in sync with lib/icons.js
+const MAX_ICON_BYTES = 512 * 1024; // pack files above this are refused
+const MAX_EMBED_BYTES = 12 * 1024; // keep in sync with lib/icons.js: cache files must be this small
+const DEFAULT_SIZE = 72; // px; shrunken icons are ~4-9 KB so a whole tile stays well under 15 KB
 const PNG_MAGIC = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 const validId = n => Number.isInteger(n) && n > 0 && n <= 2147483647;
 
@@ -115,7 +118,7 @@ function build(opts) {
   if (!opts.dryRun) fs.mkdirSync(cache, { recursive: true });
   for (const id of sorted) {
     const dest = path.join(cache, id + '.png');
-    if (fs.existsSync(dest)) { report.existing.push(id); continue; }
+    if (!opts.force && fs.existsSync(dest) && fs.statSync(dest).size <= MAX_EMBED_BYTES) { report.existing.push(id); continue; }
     let src = index.get(String(id));
     let via = 'id';
     if (!src && names.has(id)) { src = index.get(names.get(id)); via = 'name'; }
@@ -123,8 +126,12 @@ function build(opts) {
     const st = fs.statSync(src);
     if (st.size > MAX_ICON_BYTES) { report.rejected.push({ id, reason: 'larger than plugin limit (' + st.size + ' bytes)' }); continue; }
     if (!isPng(src)) { report.rejected.push({ id, reason: 'not a PNG' }); continue; }
-    if (!opts.dryRun) fs.copyFileSync(src, dest, fs.constants.COPYFILE_EXCL);
-    report.copied.push({ id, via });
+    const size = opts.size === undefined ? DEFAULT_SIZE : opts.size;
+    let out;
+    try { out = size > 0 ? shrink(fs.readFileSync(src), size) : fs.readFileSync(src); } catch (e) { report.rejected.push({ id, reason: 'cannot shrink: ' + e.message }); continue; }
+    if (out.length > MAX_EMBED_BYTES) { report.rejected.push({ id, reason: 'still ' + out.length + ' bytes after resize (limit ' + MAX_EMBED_BYTES + ')' }); continue; }
+    if (!opts.dryRun) fs.writeFileSync(dest, out);
+    report.copied.push({ id, via, bytes: out.length });
   }
   return report;
 }
@@ -140,6 +147,8 @@ function parseArgs(argv) {
       case '--ids': o.idsFile = need(i++); break;
       case '--listfile': o.listfile = need(i++); break;
       case '--game': o.gamePath = need(i++); break;
+      case '--size': o.size = Number(need(i++)); if (!Number.isInteger(o.size) || o.size < 0 || o.size > 256) throw new Error('--size must be 0-256'); break;
+      case '--force': o.force = true; break;
       case '--dry-run': o.dryRun = true; break;
       default: throw new Error('Unknown argument ' + argv[i]);
     }
@@ -151,7 +160,7 @@ function main(argv) {
   const o = parseArgs(argv);
   const opts = {
     pack: o.pack || DEFAULTS.pack, cache: o.cache || DEFAULTS.cache,
-    idsFile: o.idsFile, listfile: o.listfile, dryRun: o.dryRun,
+    idsFile: o.idsFile, listfile: o.listfile, dryRun: o.dryRun, size: o.size, force: o.force,
     exportFile: o.exportFile || (o.idsFile ? undefined : locateExport(o.gamePath || DEFAULTS.gamePath)),
   };
   console.log('export :', opts.exportFile || '(none)');
