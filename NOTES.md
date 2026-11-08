@@ -239,3 +239,7 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
 - config: `iconDir` = icon-library-144; `iconFallbackDirs` = [icon-library, icon-cache].
 - Tests: full-bleed geometry (one image, 0,0,144,144, slice, no text/rect), fallback order 144->72->text tile, empty black tile, size cap, real-library size sample. Old name/countdown host tests updated. 88 tests pass on Node 20.8.1.
 - Verify: restart Streonor; keys show bare icons; a slot with a bogus ID shows a coloured initials tile.
+
+## 2026-11-08 one press = one tap
+- index.js sends `{kind:'tap'}` (sender.ps1: down, 30 ms, up, accepted/released 'tap'); config `fireOn` press|release. Old overlap-refusal host test removed (taps no longer overlap).
+- Verified on a clean tree built from the index (HEAD + these changes): 88 tests on Node 26 and 20. Another session had uncommitted render/icon work in the same repo; only my hunks were committed.

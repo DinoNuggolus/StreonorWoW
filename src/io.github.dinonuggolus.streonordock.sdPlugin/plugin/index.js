@@ -16,7 +16,7 @@ async function main(){
  // Live estimates: read-only tail of the client chat log (own money/currency gains only), applied on top of the last saved value.
  const estimator=new Estimator(),estimating=config.liveEstimates!==false,est={estimator,marker:config.showEstimateMarker===true};
  const tail=estimating?new ChatTail(typeof config.chatLogPath==='string'&&config.chatLogPath&&path.isAbsolute(config.chatLogPath)&&config.chatLogPath.length<4096?config.chatLogPath:path.join(config.logDir||path.join(config.gamePath||'G:/World of Warcraft/_forever_','Logs'),'WoWChatLog.txt')):null;
- let pressId=0;const timers=new PressTimers(),pending=new Map();
+ let pressId=0;const heldIds=new Map(),fireOn=config.fireOn==='release'?'release':'press';const timers=new PressTimers(),pending=new Map();
  const dry=process.env.STREONORDOCK_DRY_RUN==='1';
  const relayArgs=['-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(__dirname,'sender.ps1'),'-Port',options.port,'-GameProcess',config.gameProcess||'Wow.exe','-ParentPid',String(process.pid)];if(dry)relayArgs.push('-DryRun');
  const bridge=spawn('powershell.exe',relayArgs,{windowsHide:true,stdio:['pipe','pipe','pipe']});
@@ -42,7 +42,7 @@ if(reader.error!==lastError){lastError=reader.error;if(lastError)log('snapshotEr
  // ONE shared timer: slow cadence normally, fast only while a press timer has <= cad.within seconds left; cancelled when idle.
  function arm(){if(!contexts.size||timer||stopping)return;timer=setTimeout(async()=>{timer=null;await tick();arm();},nextDelay(timers.minLeft(),cad));}
  function ensureTimer(){if(contexts.size){if(!timer&&!ticking){ticking=true;tick().finally(()=>{ticking=false;arm();});}}else if(timer){clearTimeout(timer);timer=null;}}
- function releaseContext(context){const e=contexts.get(context);if(e?.type==='key'&&held.delete(context))command({kind:'chord',slot:e.index,down:false});}
+ function releaseContext(context){const e=contexts.get(context);heldIds.delete(context);if(e?.type==='key')held.delete(context);}
  function handle(m){
   if(typeof m.context!=='string'||m.context.length>256)return;
   if(m.event==='willAppear'){
@@ -52,10 +52,17 @@ if(reader.error!==lastError){lastError=reader.error;if(lastError)log('snapshotEr
    releaseContext(m.context);const entry={type:match[2]?'key':match[3]?'readout':'status',index:Number(match[2]||match[3]||0)};contexts.set(m.context,entry);draw(m.context,entry);ensureTimer();
   }else if(m.event==='willDisappear'){releaseContext(m.context);contexts.delete(m.context);pendingImages.delete(m.context);ensureTimer();}
   else if(m.event==='keyDown'||m.event==='keyUp'){
-   const e=contexts.get(m.context);if(e?.type!=='key')return;const down=m.event==='keyDown';if(down){if(held.has(m.context))return;held.add(m.context);}else if(!held.delete(m.context))return;
-   const id=down?++pressId:undefined;
-   if(down){if(pending.size>=128)pending.delete(pending.keys().next().value);pending.set(id,{slot:e.index,item:reader.view()?.slots?.[e.index]});}
-   command({kind:'chord',slot:e.index,down,pressId:id});
+   const e=contexts.get(m.context);if(e?.type!=='key')return;const down=m.event==='keyDown';
+   // One physical press = at most ONE tap (down ~30 ms up) sent to the game, on press or on release (config fireOn).
+   // Auto-repeat/held keys never repeat: a second keyDown is ignored until the matching keyUp.
+   if(down){
+    if(held.has(m.context))return;held.add(m.context);const id=++pressId;heldIds.set(m.context,id);
+    if(pending.size>=128)pending.delete(pending.keys().next().value);pending.set(id,{slot:e.index,item:reader.view()?.slots?.[e.index]});
+    if(fireOn==='press')command({kind:'tap',slot:e.index,pressId:id});
+   }else{
+    if(!held.delete(m.context))return;const id=heldIds.get(m.context);heldIds.delete(m.context);
+    if(fireOn==='release'&&id!==undefined)command({kind:'tap',slot:e.index,pressId:id});
+   }
   }else if(m.event==='didReceiveSettings'){const e=contexts.get(m.context);if(e)draw(m.context,e);}
  }
  function stop(){if(stopping)return;stopping=true;cleanup.stop();if(timer)clearInterval(timer);command({kind:'stop'});bridge.stdin.end();const deadline=setTimeout(()=>bridge.kill(),3000);deadline.unref();}

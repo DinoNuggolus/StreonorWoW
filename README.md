@@ -319,3 +319,12 @@ addon export (`cooldownSource` = `learned` | `base` | `category` | `table`; `ver
 Pool/category sharing happens only when the export carries a `poolKey`. A press the game refuses (mana, range,
 global cooldown, dead) can still start a false timer. Lengths come from the game's base cooldown or from out-of-combat
 learning in the addon; run `/sdock cdprobe` in game to see what the addon reads.
+
+## One press = one tap (`fireOn`)
+
+Each physical key press sends the game exactly **one** chord tap: down, ~30 ms, up (`sender.ps1 -TapMs`, default 30), so the game never
+sees a long-held chord. Config `fireOn`: `"press"` (default; tap when the key goes down) or `"release"` (tap when it comes up).
+A second `keyDown` for a key that is still held (auto-repeat) is ignored until its `keyUp`; a tap is never queued twice; a stray
+`keyUp` does nothing. The focus and physical-conflict guards still apply (a refused tap sends nothing and queues nothing). The 2 s
+safety release remains for the low-level `chord` command. The addon side acts on the down edge only (see the StreonorDock README,
+`/sdock clicks`).

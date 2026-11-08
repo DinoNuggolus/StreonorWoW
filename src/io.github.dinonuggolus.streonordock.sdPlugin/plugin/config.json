@@ -4,6 +4,7 @@
   "iconDir": "G:\\WoWFOREVER_ADDONS\\StreonorWoW\\icon-library-144",
   "embedIcons": true,
   "gameProcess": "Wow.exe",
+  "fireOn": "press",
   "deleteLogsOnLogout": true,
   "liveEstimates": true,
   "showEstimateMarker": false,

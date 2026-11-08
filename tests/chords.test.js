@@ -33,3 +33,15 @@ test('PowerShell syntax and actual helper dry-run mapping all slots',()=>{
  const output=r.stdout.trim().split(/\r?\n/).map(x=>JSON.parse(x)).filter(x=>x.bridge==='chord');a.equal(output.length,30,r.stdout);
  for(let slot=1;slot<=15;slot++){a.deepEqual(output[(slot-1)*2].sequence,plan(slot,true));a.deepEqual(output[(slot-1)*2+1].sequence,plan(slot,false));}
 });
+for(const guard of ['unfocused','conflict'])test('tap refused when '+guard+': no keys sent, nothing queued',()=>{
+ const input=[{kind:'tap',slot:1,pressId:1},{kind:'tap',slot:1,pressId:2},{kind:'stop'}].map(JSON.stringify).join('\n')+'\n';
+ const r=spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',sender,'-DryRun','-DryRunGuard',guard],{input,encoding:'utf8',timeout:10000});a.equal(r.status,0,r.stderr);
+ const out=r.stdout.trim().split(/\r?\n/).map(JSON.parse);a.equal(out.filter(x=>x.bridge==='chord').length,0);a.equal(out.filter(x=>x.bridge==='accepted').length,0);a.equal(out.filter(x=>x.bridge==='refused').length,2);
+});
+test('a tap is exactly one down + one up for that slot, short, with no leftover active chord',()=>{
+ const lines=[{kind:'tap',slot:3,pressId:9},{kind:'tap',slot:3,pressId:10},{kind:'stop'}].map(JSON.stringify).join('\n')+'\n';
+ const started=Date.now();const r=spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',sender,'-DryRun'],{input:lines,encoding:'utf8',timeout:10000});a.equal(r.status,0,r.stderr);
+ const out=r.stdout.trim().split(/\r?\n/).map(JSON.parse);const chords=out.filter(x=>x.bridge==='chord');
+ a.equal(chords.length,4,'two taps = two downs + two ups');a.deepEqual(chords[0].sequence,plan(3,true));a.deepEqual(chords[1].sequence,plan(3,false));
+ a.deepEqual(out.filter(x=>x.bridge==='accepted').map(x=>x.pressId),[9,10]);a.equal(out.filter(x=>x.bridge==='released'&&x.reason==='tap').length,2);a.ok(!out.some(x=>x.reason==='timeout'||x.reason==='stop'));
+});

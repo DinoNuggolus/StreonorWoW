@@ -1,5 +1,5 @@
 param([int]$Port=0,[switch]$DryRun,[string]$GameProcess='Wow.exe',[int]$ParentPid=0,
-      [ValidateSet('normal','unfocused','conflict')][string]$DryRunGuard='normal')
+      [ValidateSet('normal','unfocused','conflict')][string]$DryRunGuard='normal',[int]$TapMs=30)
 $ErrorActionPreference='Stop'
 [Console]::OutputEncoding=New-Object Text.UTF8Encoding($false)
 Add-Type -TypeDefinition @"
@@ -63,6 +63,17 @@ function Command($cmd){
    if($outbox.Count -ge 128 -or ([string]$cmd.message).Length -gt 1048576){throw 'Host output limit'}
    $outbox.Enqueue([string]$cmd.message)
   };return
+ }
+ if($cmd.kind -eq 'tap'){
+  # A quick tap: down, ~30 ms, up. The game never sees a long-held chord; the 2 s safety release stays for 'chord'.
+  if($cmd.slot -isnot [int] -or $cmd.slot -lt 1 -or $cmd.slot -gt 15){return}
+  [int]$tapSlot=$cmd.slot;$reason=$null
+  if($script:active -gt 0){$reason='overlap'}elseif(-not (Focused)){$reason='unfocused'}elseif(Conflict $tapSlot){$reason='physical-conflict'}
+  if($reason){Emit @{bridge='refused';slot=$tapSlot;reason=$reason;pressId=$cmd.pressId};return}
+  $script:active=$tapSlot;$script:downAt=$started.ElapsedMilliseconds
+  try{Send-ChordSequence $tapSlot $true;Emit @{bridge='accepted';slot=$tapSlot;pressId=$cmd.pressId};Start-Sleep -Milliseconds $TapMs}
+  finally{ReleaseActive 'tap'}
+  return
  }
  if($cmd.kind -ne 'chord' -or $cmd.slot -isnot [int] -or $cmd.slot -lt 1 -or $cmd.slot -gt 15 -or $cmd.down -isnot [bool]){return}
  [int]$slot=$cmd.slot

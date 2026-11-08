@@ -19,15 +19,11 @@ test('real PowerShell relay: register, all contexts, press/release, rewrite, no 
  await host.wait(m=>m.event==='setImage'&&m.context==='K2'&&decodeURIComponent(m.payload.image).includes('>MH<'));   // key tiles show no names; a missing icon shows initials only
  const key=event=>host.send({event,action:'io.github.dinonuggolus.streonordock.key2',context:'K2',payload:{}});key('keyDown');key('keyDown');key('keyUp');
  for(let i=0;i<100&&!diagnostics.includes('"down":false');i++)await sleep(30);const chords=diagnostics.split(/\r?\n/).filter(x=>x.includes('"bridge":"chord"')).map(JSON.parse);a.equal(chords.length,2,diagnostics+stderr);a.equal(chords[0].slot,2);
- // Holding another slot makes slot 2 an overlap refusal: no second decrement.
- host.send({event:'keyDown',context:'K1',payload:{}});key('keyDown');key('keyDown');
- await host.wait(m=>m.event==='showAlert'&&m.context==='K2');
- host.send({event:'keyUp',context:'K1',payload:{}});key('keyUp');
- a.equal((diagnostics.match(/"bridge":"accepted"/g)||[]).length,2,diagnostics);
+ a.equal((diagnostics.match(/"bridge":"accepted"/g)||[]).length,1,"held key with repeated downs = one tap: "+diagnostics);
  await fs.writeFile(file,fixture.replace('Moonfire','Changed Spell'));
  await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&decodeURIComponent(m.payload.image).includes('>CS<'));
  await fs.writeFile(file,'broken fixture');await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&decodeURIComponent(m.payload.image).includes('#2b3844'));
- key('keyDown');key('keyUp');for(let i=0;i<100&&(diagnostics.match(/"bridge":"chord"/g)||[]).length<6;i++)await sleep(30);a.equal((diagnostics.match(/"bridge":"chord"/g)||[]).length,6);
+ key('keyDown');key('keyUp');for(let i=0;i<100&&(diagnostics.match(/"bridge":"chord"/g)||[]).length<4;i++)await sleep(30);a.equal((diagnostics.match(/"bridge":"chord"/g)||[]).length,4);
  host.send({event:'didReceiveSettings',context:'K1',payload:{settings:{slot:99}}});
  for(const c of [...Array.from({length:15},(_,i)=>`K${i+1}`),'R1','R2','R3','S'])host.send({event:'willDisappear',context:c,payload:{}});
  await sleep(300);const count=host.messages.length;await sleep(1100);a.equal(host.messages.length,count);a.equal(stderr,'');
@@ -77,4 +73,23 @@ test('accepted press starts a plugin timer once (big countdown); repeat ignored;
  host.send({event:'keyDown',context:'K3',payload:{}});host.send({event:'keyUp',context:'K3',payload:{}});await sleep(1200);
  for(const c of ['K2','K3'])a.ok(!host.messages.some(m=>m.event==='setImage'&&m.context===c&&!img(m).includes('#2b3844')&&(img(m).includes('id="ic"')||/>\d+[mh]?</.test(img(m)))),c+' shows no countdown');
  a.equal(stderr,'');
+});
+
+for(const fireOn of ['press','release'])test(`fireOn=${fireOn}: one physical press = one tap; held/repeated downs never repeat`, {timeout:30000},async t=>{
+ const dir=await fs.mkdtemp(path.join(__dirname,'tmp-fire-'));const file=path.join(dir,'StreonorDock.lua'),cfg=path.join(dir,'config.json');
+ await fs.copyFile(path.join(__dirname,'fixtures/StreonorDock.lua'),file);await fs.writeFile(cfg,JSON.stringify({savedVariablesPath:file,fireOn}));
+ const host=new MockHost(),port=await host.listen();
+ const child=spawn(process.execPath,[plugin,'-port',String(port),'-pluginUUID','FIRE','-registerEvent','registerPlugin','-info','{}'],{env:{...process.env,STREONORDOCK_CONFIG:cfg,STREONORDOCK_DRY_RUN:'1'},windowsHide:true,stdio:['pipe','pipe','pipe']});
+ let out='';child.stdout.on('data',d=>out+=d);
+ t.after(async()=>{child.stdin.end();await Promise.race([new Promise(r=>child.once('exit',r)),sleep(3000)]);if(child.exitCode===null)child.kill();await host.close();await fs.rm(dir,{recursive:true,force:true});});
+ await host.wait(m=>m.event==='registerPlugin');host.send({event:'willAppear',action:'io.github.dinonuggolus.streonordock.key4',context:'K4',payload:{}});await sleep(1200);
+ const chords=()=>(out.match(/"bridge":"chord"/g)||[]).length,accepted=()=>(out.match(/"bridge":"accepted"/g)||[]).length;
+ host.send({event:'keyDown',context:'K4',payload:{}});for(let i=0;i<5;i++)host.send({event:'keyDown',context:'K4',payload:{}});   // auto-repeat while held
+ await sleep(900);
+ if(fireOn==='press'){a.equal(accepted(),1);a.equal(chords(),2,'tap fired on press, once, already released');}else{a.equal(accepted(),0);a.equal(chords(),0,'nothing before release');}
+ await sleep(500);a.equal(chords(),fireOn==='press'?2:0,'holding longer sends nothing more');
+ host.send({event:'keyUp',context:'K4',payload:{}});await sleep(900);
+ a.equal(accepted(),1);a.equal(chords(),2,'exactly one tap per physical press');
+ host.send({event:'keyUp',context:'K4',payload:{}});await sleep(300);a.equal(chords(),2,'a stray second keyUp does nothing');
+ host.send({event:'keyDown',context:'K4',payload:{}});host.send({event:'keyUp',context:'K4',payload:{}});await sleep(900);a.equal(accepted(),2);a.equal(chords(),4);
 });
