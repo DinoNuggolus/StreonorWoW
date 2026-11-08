@@ -170,3 +170,14 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
 - Kept: SavedVariables file as the data pipe (icons, kinds, page, cooldown end times), graceful missing/corrupt
   handling (neutral tiles, logged), absolute-time cooldown countdowns, chord sending, heartbeat redraw, startup logs.
 - Status shows 'StreonorDock' and 'Page N/M'. The earlier STALE-redesign notes above are superseded.
+
+## 2026-11-08 Blank tiles after icons: shrink + guards
+- Symptom (user, live): keys blank, text too. Cause not provable without the device: tiles embedded
+  35-57 KB PNGs (setImage ~80+ KB after base64 + URL-encoding) as plain `href` inside an SVG data URI.
+  Fixes together: icons shrunk to 72x72 by the builder (pure-Node scripts/png.js; pack untouched),
+  max real setImage now ~13 KB; icons.js refuses embeds > 12 KB (logs iconSkipped, draws text tile);
+  index.js redraws text-only if an encoded tile > 40,000 chars (logs tileTooLarge); <image> now uses
+  xlink:href + xmlns:xlink (strict renderers ignore plain href); config embedIcons:false kill switch.
+- Tests: tests/iconPayload.test.js (png codec, resolver skip/kill switch, real plugin vs size-limited
+  mock host). Full run: Node 26.13.0 and 20.8.1 pass. Unverified on real S15 hardware: if tiles are
+  still blank after a Streonor restart, set embedIcons:false to isolate (text should return).

@@ -148,13 +148,19 @@ plugin folder, so `deploy-plugin.ps1`'s `/MIR` never wipes it). Steps:
    `community-listfile.csv` from github.com/wowdev/wow-listfile (147 MB) in `listfile\`.
 2. Run: `node scripts\build-icon-cache.js --listfile ..\_staging\listfile\community-listfile.csv`
    It reads every `iconFileID` in your newest `StreonorDock.lua` (read-only), maps ID to icon
-   name via the listfile, copies only those PNGs to `icon-cache\<ID>.png`, skips existing files
-   and prints resolved/unresolved IDs. The pack is never modified. Options: `--ids file.txt`,
+   name via the listfile, shrinks only those PNGs to 72x72 (4-9 KB each) into `icon-cache\<ID>.png`, skips existing
+   small files and prints resolved/unresolved IDs. The pack is never modified. Options: `--ids file.txt`,
    `--export path`, `--pack dir`, `--cache dir`, `--dry-run`.
 3. Restart Streonor. Keys/readouts show the real icons; slots with no cached file keep the
    coloured initial tile.
 4. New slots/items later: log in, `/reload` so the addon re-exports, re-run step 2, restart
    Streonor.
+
+Why small: each tile is one `setImage` data-URI message. 256x256 icons made ~80 KB messages and the
+host showed blank tiles (text too). Cache files above 12 KB are refused (logged as `iconSkipped`)
+and the plugin falls back to the text/initials tile; any tile over 40,000 chars is redrawn
+text-only (`tileTooLarge`). `--size N` changes the size (0 = copy unchanged), `--force` rebuilds.
+Set `"embedIcons": false` in `plugin\config.json` to switch icons off (text-only tiles).
 
 Licensing: the artwork is Blizzard's, redistributed by the pack author for personal,
 non-commercial use. `icon-cache/`, the pack and the listfile stay local and must never be
