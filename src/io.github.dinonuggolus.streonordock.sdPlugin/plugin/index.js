@@ -23,7 +23,11 @@ async function main(){
  bridge.stdin.on('drain',flushImages);
  function send(value){if(value.event==='setImage'){pendingImages.set(value.context,value);flushImages();}else command({kind:'send',message:JSON.stringify(value)});}
  function draw(context,entry){const raw=reader.view(),s=countWork(()=>ledger.view(raw),raw);const svg=entry.type==='key'?render.slot(s,entry.index,Date.now(),icons):entry.type==='readout'?render.readout(s,entry.index,Date.now(),icons):render.status(s);if(svg===entry.last)return;entry.last=svg;send({event:'setImage',context,payload:{target:0,image:'data:image/svg+xml;charset=utf8,'+encodeURIComponent(svg)}});}
- async function tick(){if(busy||stopping)return;busy=true;try{await reader.poll();countWork(()=>ledger.load(reader.snapshot));if(reader.error!==lastError){lastError=reader.error;if(lastError)log('snapshotError',lastError);}for(const [context,entry]of contexts)draw(context,entry);}catch(e){log('tickError',e.message);}finally{busy=false;}}
+ const redrawMs=Math.max(50,Number(process.env.STREONORDOCK_REDRAW_MS)||30000);let lastFull=Date.now(),firstLogged=false;
+ // Heartbeat: forget what we last sent so every visible action is re-sent. Without this a host that dropped an image (page/profile switch, sleep, app restart) stays blank until the snapshot changes.
+ async function tick(){if(busy||stopping)return;busy=true;try{const changed=await reader.poll();if(changed&&reader.snapshot){const v=reader.view();log('snapshotLoaded',{file:path.basename(reader.file||''),savedAt:reader.snapshot.savedAt,page:reader.snapshot.page,filled:Object.values(reader.snapshot.slots).filter(x=>x.kind!=='empty').length,ageSeconds:Math.round(v?.ageSeconds||0),stale:!!v?.stale});}
+  if(Date.now()-lastFull>=redrawMs){lastFull=Date.now();for(const [,e]of contexts)e.last=undefined;}
+  countWork(()=>ledger.load(reader.snapshot));if(reader.error!==lastError){lastError=reader.error;if(lastError)log('snapshotError',lastError);}for(const [context,entry]of contexts)draw(context,entry);if(changed)log('redrawAll',{reason:reader.snapshot?'snapshot':'no-snapshot',contexts:contexts.size});}catch(e){log('tickError',e.message);}finally{busy=false;}}
  function ensureTimer(){if(contexts.size&&!timer){timer=setInterval(tick,1000);tick();}else if(!contexts.size&&timer){clearInterval(timer);timer=null;}}
  function releaseContext(context){const e=contexts.get(context);if(e?.type==='key'&&held.delete(context))command({kind:'chord',slot:e.index,down:false});}
  function handle(m){
@@ -31,6 +35,7 @@ async function main(){
   if(m.event==='willAppear'){
    if(contexts.size>=128&&!contexts.has(m.context))return;
    const match=new RegExp('^'+PREFIX.replace(/\./g,'\\.')+'(key(1[0-5]|[1-9])|readout([1-3])|status)$').exec(m.action||'');if(!match)return;
+   if(!firstLogged){firstLogged=true;log('firstAppear',{snapshot:!!reader.snapshot,error:reader.error});}
    releaseContext(m.context);const entry={type:match[2]?'key':match[3]?'readout':'status',index:Number(match[2]||match[3]||0)};contexts.set(m.context,entry);draw(m.context,entry);ensureTimer();
   }else if(m.event==='willDisappear'){releaseContext(m.context);contexts.delete(m.context);pendingImages.delete(m.context);ensureTimer();}
   else if(m.event==='keyDown'||m.event==='keyUp'){
@@ -43,7 +48,7 @@ async function main(){
  function stop(){if(stopping)return;stopping=true;if(timer)clearInterval(timer);command({kind:'stop'});bridge.stdin.end();const deadline=setTimeout(()=>bridge.kill(),3000);deadline.unref();}
  bridge.stdin.on('error',e=>log('relayInputError',e.message));bridge.stderr.on('data',d=>log('relayStderr',d.toString().slice(0,1000)));
  bridge.on('error',e=>{log('relayError',e.message);stop();});bridge.on('exit',code=>{log('relayExit',code);if(timer)clearInterval(timer);process.stdin.pause();process.exitCode=code||0;});
- readline.createInterface({input:bridge.stdout}).on('line',line=>{if(line.length>2*1048576)return;try{const m=JSON.parse(line);if(m.bridge){if(dry)process.stdout.write(JSON.stringify(m)+'\n');if(m.bridge==='ready'){send({event:options.registerEvent,uuid:options.pluginUUID});log('started',{dryRun:dry});}else{log('relay',m);if(m.bridge==='accepted'||m.bridge==='refused'){countWork(()=>{const token=pendingPresses.get(m.pressId);pendingPresses.delete(m.pressId);if(m.bridge==='accepted'&&token?.slot===m.slot)ledger.accept(token);});if(m.bridge==='accepted')for(const [context,e]of contexts)countWork(()=>draw(context,e));}if(m.bridge==='refused'||m.bridge==='error'){for(const [context,e]of contexts)if(e.type==='key'&&(!m.slot||e.index===m.slot))send({event:'showAlert',context});}}}else handle(m);}catch(e){log('messageError',e.message);}});
+ readline.createInterface({input:bridge.stdout}).on('line',line=>{if(line.length>2*1048576)return;try{const m=JSON.parse(line);if(m.bridge){if(dry)process.stdout.write(JSON.stringify(m)+'\n');if(m.bridge==='disconnected')log('hostDisconnected',m);if(m.bridge==='ready'){send({event:options.registerEvent,uuid:options.pluginUUID});log('started',{dryRun:dry});}else{log('relay',m);if(m.bridge==='accepted'||m.bridge==='refused'){countWork(()=>{const token=pendingPresses.get(m.pressId);pendingPresses.delete(m.pressId);if(m.bridge==='accepted'&&token?.slot===m.slot)ledger.accept(token);});if(m.bridge==='accepted')for(const [context,e]of contexts)countWork(()=>draw(context,e));}if(m.bridge==='refused'||m.bridge==='error'){for(const [context,e]of contexts)if(e.type==='key'&&(!m.slot||e.index===m.slot))send({event:'showAlert',context});}}}else handle(m);}catch(e){log('messageError',e.message);}});
  process.on('SIGINT',stop);process.on('SIGTERM',stop);process.on('uncaughtException',e=>{log('fatal',e.message);stop();});process.on('unhandledRejection',e=>{log('fatal',String(e));stop();});
  // Host-launched plugins may have stdin closed; only the harness uses stdin EOF to stop.
  if(dry){process.stdin.resume();process.stdin.on('end',stop);}

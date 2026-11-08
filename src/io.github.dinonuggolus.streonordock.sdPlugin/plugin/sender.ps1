@@ -92,6 +92,7 @@ try {
    $batch++;try{Command ($line|ConvertFrom-Json)}catch{ReleaseActive 'error';Emit @{bridge='error';error=$_.Exception.Message}}
   }
   if($socket){
+   try{
    # Never block the input/release loop on host backpressure. Only one send is in flight.
    if($sendTask -and $sendTask.IsCompleted){[void]$sendTask.GetAwaiter().GetResult();$sendTask=$null;$sendCts.Dispose();$sendCts=$null}
    if(-not $sendTask -and $outbox.Count -gt 0){
@@ -106,6 +107,12 @@ try {
     $message.Write($buffer,0,$r.Count)
     if($r.EndOfMessage){[Console]::WriteLine(([Text.Encoding]::UTF8.GetString($message.ToArray()) -replace '[\r\n]+',' '));$message.SetLength(0)}
     $receive=$socket.ReceiveAsync($segment,[Threading.CancellationToken]::None)
+   }
+   }catch{
+    # The host went away (Streonor quit/restarted/slept, or dropped the socket without a close
+    # handshake): ReceiveAsync/SendAsync fault as an AggregateException. Not a relay bug.
+    $inner=$_.Exception;while($inner.InnerException){$inner=$inner.InnerException}
+    Emit @{bridge='disconnected';error=$inner.Message};break
    }
   }else{Start-Sleep -Milliseconds 10}
  }

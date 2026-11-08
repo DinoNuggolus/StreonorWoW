@@ -149,3 +149,17 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
   (absolute endsAt anchored to savedAt+mtime) and key sending are unchanged.
 - The same file is also all the controller can show right after login: it holds the last
   logout/reload's data until the next save.
+
+## 2026-11-08 startup / relay investigation
+- Log evidence: the two "blank until /reload" starts (23:54, 01:02) logged `snapshotError: No saved
+  snapshot`: the SavedVariables file did not exist yet (first-ever session; WoW writes it only on
+  /reload or logout). Later starts load the file fine (verified: reader parses the real file).
+- The `fatal ... "Wait"` relay deaths = host dropped the websocket without a close handshake
+  (ReceiveAsync faulted as AggregateException). Now reported as `bridge:disconnected` ->
+  log `hostDisconnected`, clean exit 0; Streonor starts a fresh plugin process.
+- Race check: willAppear before the first poll draws NO SNAPSHOT, the immediate first tick then
+  redraws every context (covered by existing host tests). Added: 30 s heartbeat that clears the
+  per-context "last sent" cache so images a host dropped (page/profile change, sleep, restart) are
+  re-sent; env STREONORDOCK_REDRAW_MS for tests.
+- New log events: `firstAppear` {snapshot,error}, `snapshotLoaded` {file,savedAt,page,filled,ageSeconds,stale},
+  `redrawAll` {reason,contexts}, `hostDisconnected`.
