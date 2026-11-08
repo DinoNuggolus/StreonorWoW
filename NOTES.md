@@ -204,3 +204,8 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
 - tests/iconLibrary.test.js: build mapping/incremental/worker path, check-icons, real-plugin runtime flow
   (rewrite export -> new icon, fallback dir, missing ID -> text tile) and a no-network source check.
 - Unverified: appearance on real S15 hardware.
+
+## 2026-11-08 OmniCC-style cooldown render
+- lib/render.js `cooling()` (defs + two <use>, pie clipPath via `wedge(p)`), PressTimers.info/minLeft, lib/cadence.js,
+  setTimeout chain in index.js. Tests: tests/sweep.test.js (66 plugin tests total). Spells still have no timer.
+- Not verified on the real S15 renderer (filters/clipPath support unknown); preview HTML only checked by generation.

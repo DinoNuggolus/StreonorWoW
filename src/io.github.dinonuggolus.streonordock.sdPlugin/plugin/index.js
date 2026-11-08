@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),{spawn}=require('node:child_process'),readline=require('node:readline');
-const {LogCleanup}=require('../lib/logCleanup'),{PressTimers}=require('../lib/pressTimers'),{ExportReader}=require('../lib/exportReader'),{IconResolver}=require('../lib/icons'),render=require('../lib/render');
+const {cadence,nextDelay}=require('../lib/cadence'),{LogCleanup}=require('../lib/logCleanup'),{PressTimers}=require('../lib/pressTimers'),{ExportReader}=require('../lib/exportReader'),{IconResolver}=require('../lib/icons'),render=require('../lib/render');
 const PREFIX='io.github.dinonuggolus.streonordock.';
 function args(argv){const o={};for(let i=0;i<argv.length;i+=2){if(!/^-(port|pluginUUID|registerEvent|info)$/.test(argv[i])||argv[i+1]===undefined)throw Error('Invalid host arguments');o[argv[i].slice(1)]=argv[i+1];}if(!/^\d+$/.test(o.port)||+o.port<1||+o.port>65535||!o.pluginUUID||o.pluginUUID.length>256||!/^registerPlugin$/.test(o.registerEvent))throw Error('Missing host arguments');return o;}
 function logger(){const dir=path.join(__dirname,'..','logs'),file=path.join(dir,'streonordock.jsonl');let last='',at=0;return(event,data)=>{try{let entry={time:new Date().toISOString(),event,data};if(JSON.stringify(entry).length>3000)entry.data=JSON.stringify(data).slice(0,2000);const line=JSON.stringify(entry)+'\n';const identity=JSON.stringify({event,data:entry.data});if(identity===last&&Date.now()-at<60000)return;last=identity;at=Date.now();fs.mkdirSync(dir,{recursive:true});if(fs.existsSync(file)&&fs.statSync(file).size+Buffer.byteLength(line)>1048576){const old=file+'.previous';if(fs.existsSync(old))fs.unlinkSync(old);fs.renameSync(file,old);}fs.appendFileSync(file,line);}catch{}};}
@@ -34,7 +34,10 @@ async function main(){
  async function tick(){if(busy||stopping)return;busy=true;try{const changed=await reader.poll();if(changed&&reader.snapshot){const mt=reader.snapshot.mtimeMs;if(lastExportMtime!==undefined&&mt!==lastExportMtime)cleanup.request('export-saved');lastExportMtime=mt;}if(changed&&reader.snapshot){log('snapshotLoaded',{file:path.basename(reader.file||''),savedAt:reader.snapshot.savedAt,page:reader.snapshot.page,filled:Object.values(reader.snapshot.slots).filter(x=>x.kind!=='empty').length});}
   if(Date.now()-lastFull>=redrawMs){lastFull=Date.now();for(const [,e]of contexts)e.last=undefined;}
 if(reader.error!==lastError){lastError=reader.error;if(lastError)log('snapshotError',lastError);}for(const [context,entry]of contexts)draw(context,entry);if(changed)log('redrawAll',{reason:reader.snapshot?'snapshot':'no-snapshot',contexts:contexts.size});}catch(e){log('tickError',e.message);}finally{busy=false;}}
- function ensureTimer(){if(contexts.size&&!timer){timer=setInterval(tick,1000);tick();}else if(!contexts.size&&timer){clearInterval(timer);timer=null;}}
+ const cad=cadence(config);let ticking=false;
+ // ONE shared timer: slow cadence normally, fast only while a press timer has <= cad.within seconds left; cancelled when idle.
+ function arm(){if(!contexts.size||timer||stopping)return;timer=setTimeout(async()=>{timer=null;await tick();arm();},nextDelay(timers.minLeft(),cad));}
+ function ensureTimer(){if(contexts.size){if(!timer&&!ticking){ticking=true;tick().finally(()=>{ticking=false;arm();});}}else if(timer){clearTimeout(timer);timer=null;}}
  function releaseContext(context){const e=contexts.get(context);if(e?.type==='key'&&held.delete(context))command({kind:'chord',slot:e.index,down:false});}
  function handle(m){
   if(typeof m.context!=='string'||m.context.length>256)return;

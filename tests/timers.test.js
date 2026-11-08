@@ -23,19 +23,19 @@ test('unknown or invalid duration starts nothing; items without poolKey are sepa
 test('big countdown overlay at 119/60/59/1 seconds, none at 0, no banner text',()=>{
  const c=clockOf(),t=new PressTimers(c.now);const s={savedAt:1,mtimeMs:1,page:{index:1,count:1},slots:{1:potion},readouts:{}};
  const shown=()=>render.slot(s,1,c.t,null,t);
- a.ok(!shown().includes('font-size="56"')&&!shown().includes('fill="#ffd23f"'));
+ a.ok(!shown().includes('font-size="56"')&&!shown().includes('id="ic"'));
  t.start(potion);c.t+=0;a.match(shown(),/>2:00</);
  c.t=1000000+1000;a.match(shown(),/>1:59</);
  c.t=1000000+60000;a.match(shown(),/>60</);
  c.t=1000000+61000;a.match(shown(),/>59</);
  c.t=1000000+119000;a.match(shown(),/>1</);
- c.t=1000000+120000;a.ok(!shown().includes('#ffd23f'));
+ c.t=1000000+120000;a.ok(!shown().includes('id="ic"'));
  for(const bad of ['SNAPSHOT','STALE','saved','USED','CD ?'])a.ok(!shown().includes(bad));
 });
 test('export end time (cooldown running at save time) is honored; unknown source draws nothing',()=>{
  const s=normalize({schema:1,savedAt:1000,page:{index:1,count:1},slots:{1:{kind:'item',id:9,name:'P',endsAt:1090,source:'game'},2:{kind:'item',id:10,name:'Q',source:'used'},3:{kind:'item',id:11,name:'R',source:'est'}},readouts:{}},50000);
  a.match(render.slot(s,1,50000+10000),/>80</);
- a.ok(!render.slot(s,2,60000).includes('#ffd23f'));a.ok(!render.slot(s,3,60000).includes('#ffd23f'));
+ a.ok(!render.slot(s,2,60000).includes('id="ic"'));a.ok(!render.slot(s,3,60000).includes('id="ic"'));
 });
 test('reader accepts only known press-timer fields',()=>{
  const s=normalize({schema:1,savedAt:1000,page:{index:1,count:1},slots:{1:potion,2:{kind:'item',id:3,cooldownSeconds:120,cooldownSource:'bogus'},3:{kind:'item',id:4,cooldownSeconds:60,cooldownSource:'learned',poolKey:'a b<'}},readouts:{}},1);

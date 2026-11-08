@@ -265,3 +265,17 @@ the plugin deletes them for privacy once the game is done with them.
 - **Caveat:** because deletion waits for the game to exit, logs stay readable for the whole session and
   disappear after you quit WoW (while the plugin is running).
 - Each attempt is logged to `streonordock.jsonl` as counts only (`deleted`, `busy`, `skipped`, `errors`).
+
+### Cooldown look (OmniCC style)
+
+While an item timer runs, the key icon is desaturated and dimmed; a clockwise pie wedge starting at
+12 o'clock restores full colour as time elapses; a big white number with a dark outline is centred
+over the icon (seconds up to 99, then `m:ss`). When the timer ends the plain icon returns. The icon is
+embedded once in `<defs>` and drawn twice with `<use>` (gray copy with an `feColorMatrix` saturate
+filter, colour copy clipped by the wedge), so the payload stays at one icon; a translucent dim rect keeps
+the state visible if a renderer ignores the filter. Keys without an icon use the same treatment on the
+text tile. Sweeps use the press-timer length, or `cooldownSeconds` for a cooldown running at save time.
+Spells intentionally have **no** timer (spell cooldowns are sealed in Forever).
+
+Redraw cadence (one shared timer, cancelled when idle): `redrawIntervalMs` (default 1000), and
+`fastRedrawIntervalMs` (500) only while a press timer has <= `fastRedrawWithinSeconds` (10) left.
