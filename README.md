@@ -279,3 +279,21 @@ Spells intentionally have **no** timer (spell cooldowns are sealed in Forever).
 
 Redraw cadence (one shared timer, cancelled when idle): `redrawIntervalMs` (default 1000), and
 `fastRedrawIntervalMs` (500) only while a press timer has <= `fastRedrawWithinSeconds` (10) left.
+
+## Money and currency readouts (Dock Readout 1..3)
+Pick what a readout shows IN GAME: left-click readout slot 1/2/3 in the StreonorDock panel and choose
+Empty, Money, or any currency the character has right now (Honor, tokens, ...). The S15 LCD strip is
+view-only, so this cannot be done on the device. The panel saves the choice per character.
+
+Each readout panel shows the currency icon (library lookup by iconFileID, like the keys), a short name and
+one big plain value: money as `12g 34s 56c`, other currencies with thousands separators. No age, snapshot or
+stale text. **Accuracy:** the number is exact at each `/reload` or logout (it is the addon's saved value). Between
+saves the plugin ESTIMATES gains by reading the client chat log (`Logs\WoWChatLog.txt`) read-only and
+incrementally: the player's own `You loot ...`, `Your share of the loot is ...`, `You receive currency: ...` and
+honor-award lines add to the saved value within a few seconds. Spending (vendor purchases, repairs, mail,
+auction) writes no chat line, so it shows only after the next `/reload`, which also replaces the estimate
+with the true value and drops all pending deltas. Lines that are not clearly the player's own, or match no known
+format, are ignored, never guessed. Chat/combat logs are deleted after the game exits (`deleteLogsOnLogout`);
+set it to `false` temporarily to collect real samples for new rules.
+Config (`plugin/config.json`): `liveEstimates` (default `true`; `false` = saved values only), `showEstimateMarker`
+(default `false`; `true` prefixes `~` while a value is an estimate), optional `chatLogPath` (absolute).

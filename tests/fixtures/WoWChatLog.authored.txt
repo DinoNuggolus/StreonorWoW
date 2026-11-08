@@ -1,0 +1,10 @@
+11/8 14:00:00.100  Logging chat started
+11/8 14:03:22.123  You loot 1 Gold, 20 Silver, 5 Copper.
+11/8 14:03:23.001  [Trade] Someone: You loot 99 Gold.
+11/8 14:03:24.500  Other says: You loot 50 Gold.
+11/8 14:03:25.000  Your share of the loot is 3 Silver, 4 Copper.
+11/8 14:03:26.000  You receive currency: |cff0070dd|Hcurrency:1901:0|h[Honor]|h|r x15.
+11/8 14:03:27.000  You receive currency: |cffffffff|Hcurrency:2000:0|h[Token]|h|r.
+11/8 14:03:28.000  You have been awarded 12 honor points.
+11/8 14:03:29.000  You loot 5 Gold and a boot.
+11/8 14:03:30.000  [Guild] Friend: You receive currency: [Honor] x100.

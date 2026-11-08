@@ -1,5 +1,6 @@
 'use strict';
 const {fallback,esc}=require('./icons');
+const readoutBody=require('./readout').body;
 const bounded=(v,max)=>typeof v==='number'&&Number.isFinite(v)?Math.max(0,Math.min(v,max)):0;
 const text=(v,y,size=16,color='#fff')=>`<text x="72" y="${y}" text-anchor="middle" font-family="Arial" font-size="${size}" fill="${color}">${esc(String(v))}</text>`;
 const frame=body=>`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144"><rect width="144" height="144" fill="#101820"/>${body}</svg>`;
@@ -55,6 +56,14 @@ function tile(s,item,index,now,resolver,timers){
  body+=text(`P${Math.floor(bounded(s.page?.index,10))} · ${index}`,140,11,'#aabbcc');return frame(body);
 }
 const slot=(s,i,now=Date.now(),resolver,timers)=>tile(s,s?.slots?.[i],i,now,resolver,timers);
-const readout=(s,i,now=Date.now(),resolver,timers)=>tile(s,s?.readouts?.[i],i,now,resolver,timers);
+// est = {estimator, marker}: money/currency readouts show the saved value plus chat-log gains since the save.
+function readout(s,i,now=Date.now(),resolver,timers,est){
+ const entry=s?.readouts?.[i];
+ if(s&&entry&&(entry.kind==='money'||entry.kind==='currency')){
+  let estimate=null;try{estimate=est?.estimator?est.estimator.value(entry,s.savedAt):null;}catch{}
+  return frame(readoutBody(entry,resolver,estimate,{marker:!!est?.marker})+text(`P${Math.floor(bounded(s.page?.index,10))} · ${i}`,140,11,'#aabbcc'));
+ }
+ return tile(s,entry,i,now,resolver,timers);
+}
 function status(s){return frame(text('StreonorDock',s?60:78,s?20:22)+(s?text(`Page ${s.page.index}/${s.page.count}`,100,26):''));}
 module.exports={slot,readout,status,remaining,clock,wedge,progressOf};

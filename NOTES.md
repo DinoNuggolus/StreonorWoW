@@ -209,3 +209,16 @@ Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords,
 - lib/render.js `cooling()` (defs + two <use>, pie clipPath via `wedge(p)`), PressTimers.info/minLeft, lib/cadence.js,
   setTimeout chain in index.js. Tests: tests/sweep.test.js (66 plugin tests total). Spells still have no timer.
 - Not verified on the real S15 renderer (filters/clipPath support unknown); preview HTML only checked by generation.
+
+## 2026-11-08 Money/currency readouts and live estimates
+- exportReader.cleanSlot accepts readout kinds money{copper} and currency{currencyID,name,iconFileID,quantity,maxQuantity}.
+- lib/readout.js (tile body), lib/chatParser.js (rules table: loot-money, share-money, currency, honor; enUS strings),
+  lib/chatTail.js (incremental read-only tail: first start = last 1 MB, partial lines kept, truncation/replace/delete reset,
+  64 KB pending cap), lib/estimator.js (baseline = saved value; deltas with time >= savedAt+1s; dedupe by stamp+text;
+  2000 deltas, 48 h). index.js polls the tail each 1 s tick; render.readout takes {estimator, marker}.
+- Fixture tests/fixtures/WoWChatLog.authored.txt is AUTHORED from the client format strings, not a real log.
+  TODO: user collects real samples (deleteLogsOnLogout=false for one session) to confirm formats and add quest/mail rules;
+  new rules = one RULES entry in chatParser.js + fixture line + test.
+- Known gaps: no spend/vendor/mail/quest lines yet (no chat format verified). Tests: tests/currency.test.js.
+- Pre-existing: running node --test directly fails 4 chords/relay tests under the default PowerShell execution policy;
+  scripts/run-tests.ps1 (-ExecutionPolicy Bypass) passes.
