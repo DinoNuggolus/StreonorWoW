@@ -65,10 +65,12 @@ function Command($cmd){
  if($held.ContainsKey($slot)){return};$held[$slot]=$true
  $reason=$null
  if($script:active -gt 0){$reason='overlap'}elseif(-not (Focused)){$reason='unfocused'}elseif(Conflict $slot){$reason='physical-conflict'}
- if($reason){Emit @{bridge='refused';slot=$slot;reason=$reason};return}
+ if($reason){Emit @{bridge='refused';slot=$slot;reason=$reason;pressId=$cmd.pressId};return}
  # Mark owned before sending: a partial SendInput failure still releases every planned key.
  $script:active=$slot;$script:downAt=$started.ElapsedMilliseconds
  Send-ChordSequence $slot $true
+ # Acknowledge only a successfully sent down, never a refusal, repeat or release.
+ Emit @{bridge='accepted';slot=$slot;pressId=$cmd.pressId}
 }
 $socket=$null;$running=$true
 $outbox=New-Object 'System.Collections.Generic.Queue[string]'

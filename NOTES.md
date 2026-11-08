@@ -91,3 +91,40 @@ The user pointed out `<vendor>.localai.sdPlugin` (LocalAI Studio, profile "AI Co
 So the controller side is solved. The unsolved part is WoW -> desktop data (see open list).
 
 Open: real telemetry bridge (WoW addon -> panel), druid action list, key chords, form/page behavior.
+
+## 2026-11-07 press-based count ledger (plugin only)
+
+- Added zero-dependency, pure `lib/countLedger.js` with snapshot baselines, accepted-press
+  deductions, 0..999999 bounds, in-memory generation tokens and duplicate-ack suppression.
+  Slots capture item identity before sending; acknowledgements from an older snapshot are
+  discarded. Matching slots/readouts share item deductions (inventory totals).
+- Schema finding: Export.lua rawProviders and Core.buildExport export kind/id (itemID for
+  readouts), name/icon/count/source/endsAt, but NO consumable/reusable classification.
+  Plugin `consumableItemIds` explicitly allowlists used-up items; default [] declines to
+  guess. Configure known IDs to enable counting. Never infer from stack count or cooldown.
+  Addon source was read only; exportReader's schema allowlist is unchanged.
+- sender.ps1 now emits accepted with slot/pressId only after successful guarded down.
+  Refusals echo pressId; repeats/releases emit no acceptance. No changes to chord sequence
+  or guards. index.js correlates acceptance with captured identity, bounds pending requests,
+  and catches ledger exceptions separately from sending; no queue/replay added.
+- Rendering: plain baseline number, then ~N after accepted presses, including ~0; wider
+  badge accommodates clamped large estimates. Status says "counts est since snapshot".
+  Snapshot age and cooldown display continue independently; no press-started cooldowns.
+- Reset choice: any different savedAt, normalized export content or file mtime clears ALL
+  deductions and pending old acknowledgements, including intervening presses after savedAt.
+  No server/local time comparison attempted. Missing/invalid exports clear estimates;
+  unchanged age/stale polls preserve them. Plugin restart loses the ledger; no persistence.
+- README documents classification setup, acceptance is not proof of game consumption,
+  off-controller uses/gains invisible until reload, and spring-water sequence:
+  reload 5 -> use 3 -> ~2 -> buy 5 -> still ~2 -> reload 7.
+- Test-first: missing module/render markers and missing sender acknowledgements failed
+  before implementation. Added 5 ledger tests; expanded real relay host test for held-down
+  deduplication, overlap refusal, matching readout/status and snapshot reset. Existing
+  guard tests now require no acceptance for unfocused/conflict and exactly one per hold.
+  Added real host fault-injection test: throwing load/capture/view cannot block chords.
+- FINAL: `powershell.exe -NoProfile -File scripts/run-tests.ps1` completed successfully:
+  Node v26.13.0: 38 passed / 0 failed; Node v20.8.1: 38 passed / 0 failed.
+  All original 32 tests remain green. `git diff --check` clean (line-ending warnings only).
+- No staging/commit, deployment, device/game input, game/WTF edits or addon repo edits.
+  Real S15 rendering, real SendInput and game consumption remain unverified. Manager review
+  and consumable ID configuration remain before deployment; no consumables assumed by default.

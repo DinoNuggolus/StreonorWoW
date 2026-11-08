@@ -14,7 +14,7 @@ test('all 15 exactly match addon Core.lua list; VK scan and reverse release',()=
 });
 for(const guard of ['unfocused','conflict'])test('dry-run refusal '+guard,()=>{
  const input=[{kind:'chord',slot:1,down:true},{kind:'chord',slot:1,down:true},{kind:'chord',slot:1,down:false},{kind:'stop'}].map(JSON.stringify).join('\n')+'\n';
- const r=spawnSync('powershell.exe',['-NoProfile','-File',sender,'-DryRun','-DryRunGuard',guard],{input,encoding:'utf8',timeout:10000});a.equal(r.status,0,r.stderr);const out=r.stdout.trim().split(/\r?\n/).map(JSON.parse);a.equal(out.filter(m=>m.bridge==='refused').length,1);a.equal(out.filter(m=>m.bridge==='chord').length,0);
+ const r=spawnSync('powershell.exe',['-NoProfile','-File',sender,'-DryRun','-DryRunGuard',guard],{input,encoding:'utf8',timeout:10000});a.equal(r.status,0,r.stderr);const out=r.stdout.trim().split(/\r?\n/).map(JSON.parse);a.equal(out.filter(m=>m.bridge==='refused').length,1);a.equal(out.filter(m=>m.bridge==='chord').length,0);a.equal(out.filter(m=>m.bridge==='accepted').length,0);
 });
 test('timeout release, no repeat after timeout, overlap refusal, EOF release', {timeout:15000},async t=>{
  const child=spawn('powershell.exe',['-NoProfile','-File',sender,'-DryRun'],{windowsHide:true});t.after(()=>child.kill());let output='',errors='';child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>errors+=d);
@@ -24,7 +24,7 @@ test('timeout release, no repeat after timeout, overlap refusal, EOF release', {
  for(let i=0;i<100&&!output.includes('timeout');i++)await sleep(30);a.match(output,/timeout/);send({kind:'chord',slot:1,down:true});await sleep(100);
  a.equal((output.match(/"bridge":"chord"/g)||[]).length,2,output+errors);
  send({kind:'chord',slot:1,down:false});send({kind:'chord',slot:2,down:false});send({kind:'chord',slot:3,down:true});child.stdin.end();await new Promise(r=>child.once('exit',r));
- const messages=output.trim().split(/\r?\n/).map(JSON.parse);a.ok(messages.some(m=>m.reason==='overlap'));a.ok(messages.some(m=>m.reason==='stop'));a.equal(messages.filter(m=>m.bridge==='chord').length,4);a.equal(errors,'');
+ const messages=output.trim().split(/\r?\n/).map(JSON.parse);a.ok(messages.some(m=>m.reason==='overlap'));a.ok(messages.some(m=>m.reason==='stop'));a.equal(messages.filter(m=>m.bridge==='chord').length,4);a.deepEqual(messages.filter(m=>m.bridge==='accepted').map(m=>m.slot),[1,3]);a.equal(errors,'');
 });
 test('PowerShell syntax and actual helper dry-run mapping all slots',()=>{
  const syntax=spawnSync('powershell.exe',['-NoProfile','-Command',`$e=$null; $t=$null; [void][System.Management.Automation.Language.Parser]::ParseFile('${sender}',[ref]$t,[ref]$e); if($e.Count){$e | Out-String | Write-Error; exit 1}`],{encoding:'utf8'});a.equal(syntax.status,0,syntax.stderr);

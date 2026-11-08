@@ -40,6 +40,7 @@ There is no property inspector and action settings cannot remap keys.
 | `gamePath` | `G:\World of Warcraft\_forever_` | Auto-detect beneath `WTF/Account/*/SavedVariables/StreonorDock.lua`; newest mtime wins |
 | `iconDir` | empty | Plugin `icons/`; an absolute alternative or path relative to plugin root |
 | `staleAfterSeconds` | 600 | Age threshold; nonnegative finite number, bounded at 365 days |
+| `consumableItemIds` | `[]` | Explicit IDs of items consumed on use; only these get press-count estimates |
 | `gameProcess` | `Wow.exe` | Foreground process filename; compared case-insensitively, no window-title matching |
 
 Auto-detection reads only when the plugin has visible actions. It scans at most 4096 account
@@ -54,6 +55,7 @@ the last saved character. `StreonorDockCharDB` is layout persistence, not the di
 | `lib/luatable.js` | Non-executing Lua data grammar, 5 MiB / depth 64 / 200,000 entries |
 | `lib/exportReader.js` | One-second stat polling; bounded read and stat/read/stat verification, 3 attempts, schema-1 field allowlist |
 | `lib/icons.js` | Bounded local icon sources, inert SVG subset, stable coloured initial fallback |
+| `lib/countLedger.js` | Pure in-memory accepted-press count estimates; no I/O or timers |
 | `lib/render.js` | Pure escaped 144x144 SVG, counts, page, cooldown, stale/missing states |
 | `lib/chords.js` | Fixed slot-to-chord/VK/scan plans, independently compared to addon Core.lua |
 | `plugin/index.js` | Host arguments, lifecycle, shared tick, image deduplication, input routing and capped logs |
@@ -85,7 +87,7 @@ honestly be reconstructed. Missing counts remain absent, never fabricated as zer
 `savedAt` and `endsAt` are server seconds. At read time, the file's mtime (local milliseconds)
 anchors `savedAt`: `serverNow = savedAt + max(0, (localNow - fileMtime)/1000)`.
 Remaining is `max(0, endsAt - serverNow)`, display-clamped to one day. This lets an **existing**
-snapshot timer count down; no new uses are learned until the next save. A press never starts a
+snapshot timer count down; no new cooldowns are learned until the next save. A press never starts a
 controller timer. Age is the larger of elapsed time since mtime and local wall time minus
 `savedAt`, clamped at zero. Clock skew therefore biases toward an older/stale warning.
 Files copied/restored with fresh mtimes can shift cooldown anchors; do a fresh `/reload`.
@@ -168,3 +170,43 @@ under suitable permissions and copy them locally; the plugin never downloads any
   task permission. The readable spike and scratchpad mock, SDK and new tests informed this build.
 - Fresh reviewer delegation failed in the tool service; final review was by the implementing agent.
   This does not replace project-manager review. No deployment, profile edit, git write or push occurred.
+
+## Press-based estimated stack counts
+
+The current schema-1 addon export contains no consumable/reusable flag. Set
+`consumableItemIds` in plugin/config.json to an explicit list of IDs known to be
+used up, for example `"consumableItemIds": [118]` for Minor Healing Potion.
+The default is empty: unknown items, reusable items and spells never decrement.
+Stack size, item name and cooldown source are not evidence that an item is consumed.
+Do not put reusable items in this list. No addon changes are required or made.
+
+A successfully sent physical keyDown is acknowledged by the sender after its guards
+and SendInput sequence. Only that acknowledgement subtracts one from the configured
+item's snapshot baseline, using the slot/item mapping captured when the down was
+requested. A held/repeated press counts once; unfocused, physical-conflict, overlap
+and failed sends do not count. Key sending stays independent of the export/ledger;
+ledger exceptions fall back to snapshot rendering and never suppress chords.
+Accepted input does not prove the game consumed an item (cooldown, wrong target,
+interrupted use, etc.), so the count is an estimate.
+
+Plain numbers mean no counted presses since the loaded snapshot; after a counted
+press, keys and matching item readouts show `~N` (including `~0` at the floor),
+and Status says `counts est since snapshot`. Counts are clamped to 0..999999;
+missing counts remain absent. Multiple slots for the same item share deductions
+because the exported count is an inventory total. No controller cooldown starts.
+
+Spring-water example (with its item ID configured): after reload **5**, use 3
+accepted presses -> **~2**, buy 5 more -> still **~2** until reload, then **7**.
+Gains from buying/looting and uses outside this controller are invisible until a
+reload/logout. No certainty about live inventory is claimed, even for a plain
+baseline number: it is still a saved snapshot.
+
+Reset policy: a different savedAt, normalized export content or file mtime clears
+all deductions and pending old acknowledgements. This deliberately uses the simple
+reset rule rather than comparing press times against the approximate server/local
+cooldown anchor. Even presses after savedAt but before loading that changed snapshot
+are discarded; same-second export changes reset too. Missing/invalid exports clear
+the ledger; recovery starts from the loaded baseline. Nothing is persisted: plugin
+restart loses all estimates and returns to the saved baseline. Unchanged polls and
+age/stale changes preserve estimates. File changes invisible to the reader's
+mtime/size signature remain its existing limitation.
