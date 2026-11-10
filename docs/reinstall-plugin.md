@@ -6,10 +6,10 @@ and new plugin can be installed side by side (different folders and ids); only t
 
 ## 1. Install the new plugin
 1. Quit Streonor completely (tray icon > Exit), so it does not hold the plugin folder.
-2. From the workspace run:
-   `powershell -File scripts\deploy-plugin.ps1 -Name io.github.dinonuggolus.streonordock.sdPlugin`
-   (it copies `src\io.github.dinonuggolus.streonordock.sdPlugin` to `%APPDATA%\HotSpot\StreamDock\plugins\` and
-   backs up an existing copy of the same name). It never touches the old folder or your profiles.
+2. Extract the release zip and double-click `Install StreonorDock Plugin.bat` (developers can run
+   `scripts\deploy-plugin.ps1 -Name io.github.dinonuggolus.streonordock.sdPlugin` instead). It copies the plugin to
+   `%APPDATA%\HotSpot\StreamDock\plugins\`, backs up an existing copy of the same name and never touches the old folder
+   or your profiles.
 3. Start Streonor.
 
 ## 2. Place the keys (S15 in landscape)

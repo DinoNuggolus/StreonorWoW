@@ -20,11 +20,12 @@ function normalize(raw,mtimeMs){
  }
  throw Error('Unsupported export schema (expected 2, or transitional 1)');
 }
+const {detectGamePath}=require('./gamePath');
 class ExportReader {
  constructor(config={},deps={}){this.config=config;this.now=deps.now||Date.now;this.sleep=deps.sleep||(ms=>new Promise(r=>setTimeout(r,ms)));this.io=deps.fs||fs;this.snapshot=null;this.error=null;this.signature=null;this.file=null;}
  async locate(){
   if(this.config.savedVariablesPath)return this.config.savedVariablesPath;
-  const base=path.join(this.config.gamePath||'G:\\World of Warcraft\\_forever_','WTF','Account');
+  const base=path.join(this.config.gamePath||detectGamePath(),'WTF','Account');
   const accounts=await this.io.readdir(base,{withFileTypes:true});if(accounts.length>4096)throw Error('Account limit');
   const files=[];for(const entry of accounts){if(!entry.isDirectory())continue;const file=path.join(base,entry.name,'SavedVariables','StreonorDock.lua');try{const st=await this.io.stat(file);if(st.isFile())files.push({file,time:st.mtimeMs});}catch{}}
   files.sort((a,b)=>b.time-a.time);if(!files.length)throw Error('No saved export');return files[0].file;

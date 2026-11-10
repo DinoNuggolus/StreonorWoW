@@ -83,6 +83,6 @@ test('shipped plugin never touches the network and reads icons only from configu
  for(const f of ['lib/icons.js','lib/render.js','lib/exportReader.js','plugin/index.js']){const code=await fs.readFile(path.join(root,f),'utf8');
   a.doesNotMatch(code,/require\(['"]node:(https?|net|dns|dgram|tls)['"]\)|require\(['"](https?|net|dns)['"]\)|fetch\(|XMLHttpRequest/,f);}
  const cfg=JSON.parse(await fs.readFile(path.join(root,'plugin','config.json'),'utf8'));
- a.match(cfg.iconDir,/icon-library-144$/);const fb=cfg.iconFallbackDirs.map(x=>path.win32.basename(x));a.deepEqual(fb.slice(0,2),['icon-library','icon-cache']);   // order: 144 px, 72 px, old cache
+ a.equal(cfg.iconDir,'');a.deepEqual(cfg.iconFallbackDirs,[]);   // portable: icons live in the plugin's own icons folder
  a.match(await fs.readFile(path.join(__dirname,'..','.gitignore'),'utf8'),/^icon-library\/$/m);
 });

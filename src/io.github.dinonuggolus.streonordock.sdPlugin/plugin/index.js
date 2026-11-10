@@ -9,6 +9,8 @@ function logger(){const dir=path.join(__dirname,'..','logs'),file=path.join(dir,
 async function main(){
  const log=logger();let options;try{options=args(process.argv.slice(2));}catch(e){log('launchError',e.message);return;}
  let config={};try{const file=process.env.STREONORDOCK_CONFIG||path.join(__dirname,'config.json');if(fs.statSync(file).size>65536)throw Error('Config too large');config=JSON.parse(fs.readFileSync(file,'utf8').replace(/^﻿/,''));if(!config||typeof config!=='object'||Array.isArray(config))throw Error('Config must be object');}catch(e){log('configError',e.message);config={};}
+ // Optional per-machine overrides (never shipped, never overwritten by the installer).
+ try{const fileLocal=path.join(__dirname,'config.local.json');if(!process.env.STREONORDOCK_CONFIG&&fs.existsSync(fileLocal)&&fs.statSync(fileLocal).size<=65536){const extra=JSON.parse(fs.readFileSync(fileLocal,'utf8').replace(/^﻿/,''));if(extra&&typeof extra==='object'&&!Array.isArray(extra))config={...config,...extra};}}catch(e){log('configLocalError',e.message);}
  for(const k of ['savedVariablesPath','gamePath','iconDir','gameProcess'])if(typeof config[k]!=='string'||config[k].length>4096)delete config[k];
  if(config.iconDir&&!path.isAbsolute(config.iconDir))config.iconDir=path.resolve(__dirname,'..',config.iconDir);
  config.iconFallbackDirs=Array.isArray(config.iconFallbackDirs)?config.iconFallbackDirs.filter(d=>typeof d==='string'&&d&&d.length<=4096).slice(0,4).map(d=>path.isAbsolute(d)?d:path.resolve(__dirname,'..',d)):[];

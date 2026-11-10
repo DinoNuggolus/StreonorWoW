@@ -1,0 +1,7 @@
+Repository: StreonorWoW (plugin)
+
+About (description):
+Streonor S15 plugin for WoW: Forever - 15 fixed chord keys that show your action bar icons. Requires the StreonorDock addon: https://github.com/DinoNuggolus/Stream-Controller-Actionbar-for-Streonor-Dock
+
+Suggested topics: streonor, streamdock, stream-controller, wow, world-of-warcraft, wow-forever, plugin
+Website: https://github.com/DinoNuggolus/Stream-Controller-Actionbar-for-Streonor-Dock

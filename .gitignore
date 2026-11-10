@@ -15,3 +15,5 @@ icon-cache/
 *.zip
 icon-library/
 icon-library-144/
+
+dist/

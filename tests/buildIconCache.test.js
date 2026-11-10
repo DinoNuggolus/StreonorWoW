@@ -74,8 +74,8 @@ test('argument parsing rejects unknown flags and missing values',()=>{
  a.throws(()=>parseArgs(['--nope']));a.throws(()=>parseArgs(['--pack']));
 });
 
-test('shipped plugin config points at the private cache outside the plugin folder',()=>{
+test('shipped plugin config is portable: no machine paths, icons come from the plugin-local icons folder',()=>{
  const cfg=JSON.parse(fs.readFileSync(path.join(__dirname,'..','src','io.github.dinonuggolus.streonordock.sdPlugin','plugin','config.json'),'utf8'));
- a.ok(path.win32.isAbsolute(cfg.iconDir));a.match(cfg.iconDir,/icon-library-144$/);
+ a.equal(cfg.iconDir,'');a.equal(cfg.gamePath,'');a.deepEqual(cfg.iconFallbackDirs,[]);a.doesNotMatch(JSON.stringify(cfg),/[A-Za-z]:\\\\/);
  const gi=fs.readFileSync(path.join(__dirname,'..','.gitignore'),'utf8');a.match(gi,/^icon-cache\/$/m);a.match(gi,/^\*\.png$/m);
 });

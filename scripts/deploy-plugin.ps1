@@ -13,6 +13,6 @@ if (Test-Path $dest) {
   New-Item -ItemType Directory -Force (Split-Path $bak) | Out-Null
   robocopy $dest $bak /E /XD logs /NFL /NDL /NJH /NJS | Out-Null
 }
-robocopy $src $dest /MIR /XD logs /NFL /NDL /NJH /NJS | Out-Null
+robocopy $src $dest /MIR /XD logs icons /XF config.local.json /NFL /NDL /NJH /NJS | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed ($LASTEXITCODE)" }
 Write-Host "Deployed $Name -> $dest (restart Streonor to load)."
