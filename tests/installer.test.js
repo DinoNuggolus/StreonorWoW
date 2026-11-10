@@ -18,7 +18,7 @@ test('release zip: only plugin files, installer, README and LICENSE; no art, log
  const {zip}=build(),names=entries(zip);
  for(const n of names){a.ok(!n.includes('\\'),'forward slashes: '+n);a.doesNotMatch(n,/(^|\/)(logs|icons|icon-library|icon-library-144|icon-cache|state|tests|docs|_backups)(\/|$)/i,n);a.doesNotMatch(n,/config\.local\.json|\.previous$|\.jsonl$/i,n);}
  const pngs=names.filter(n=>/\.(png|jpe?g|webp|gif|blp|tga)$/i.test(n));a.deepEqual(pngs.map(n=>n.replace(/^[^/]+\//,'')),[`${ID}/images/icon.png`],'only the plugin\'s own icon');
- for(const need of [`${ID}/manifest.json`,`${ID}/plugin/index.js`,`${ID}/plugin/sender.ps1`,`${ID}/plugin/config.json`,'Install StreonorDock Plugin.bat','Uninstall StreonorDock Plugin.bat','Install-StreonorDock.ps1','README.txt','LICENSE'])a.ok(names.some(n=>n.endsWith('/'+need)),'missing '+need);
+ for(const need of [`${ID}/manifest.json`,`${ID}/plugin/index.js`,`${ID}/plugin/sender.ps1`,`${ID}/plugin/config.json`,'Install StreonorDock Plugin.bat','Uninstall StreonorDock Plugin.bat','Install-StreonorDock.ps1','Build Icon Library.bat','Build-IconLibrary.ps1','tools/build-icon-library.js','tools/png.js','README.txt','LICENSE'])a.ok(names.some(n=>n.endsWith('/'+need)),'missing '+need);
  const dir=extract(zip);
  const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(d,e.name)):[path.join(d,e.name)]);
  for(const f of walk(dir)){if(/\.png$/i.test(f))continue;const t=fs.readFileSync(f,'utf8');a.doesNotMatch(t,PERSONAL,f);}

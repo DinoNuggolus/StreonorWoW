@@ -3,6 +3,7 @@ const fs=require('node:fs/promises'),path=require('node:path');
 const {parse,MAX_BYTES}=require('./luatable');
 const record=x=>x&&typeof x==='object'&&!Array.isArray(x)?x:{};
 const UNRESOLVED='unresolved';
+const nameOf=v=>{if(typeof v!=='string')return undefined;const s=v.replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,40);return s||undefined;};
 const iconId=v=>Number.isInteger(v)&&v>0&&v<=2147483647?v:undefined;
 // Only icon ids are ever extracted. Everything else in an entry (names, ids, counts, times) is ignored.
 function iconsFrom(table,pick){const icons={};for(let i=1;i<=15;i++)icons[i]=pick(record(table)[i]);return icons;}
@@ -12,7 +13,7 @@ function normalize(raw,mtimeMs){
  const x=record(raw);
  if(x.schemaVersion===2){
   if(typeof x.enabled!=='boolean'||typeof x.profileId!=='string'||x.profileId.length>200||!Number.isInteger(x.page)||x.page<1||x.page>10||!x.icons||typeof x.icons!=='object'||Array.isArray(x.icons))throw Error('Invalid export envelope');
-  return {schema:2,enabled:x.enabled,profileId:x.profileId,page:x.page,icons:iconsFrom(x.icons,e=>{const r=record(e);return iconId(r.iconFileID)||(r.unresolved===true?UNRESOLVED:undefined);}),mtimeMs};
+  return {schema:2,enabled:x.enabled,profileId:x.profileId,page:x.page,icons:iconsFrom(x.icons,e=>{const r=record(e);return iconId(r.iconFileID)||(r.unresolved===true?UNRESOLVED:undefined);}),names:iconsFrom(x.icons,e=>nameOf(record(e).name)),mtimeMs};
  }
  if(x.schema===1){
   if(!x.slots||typeof x.slots!=='object')throw Error('Invalid export envelope');

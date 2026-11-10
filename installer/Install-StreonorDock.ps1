@@ -101,7 +101,7 @@ try {
     if ($DryRun) { Say "  [dry run] would back up the existing copy to $backup" }
     else {
       New-Item -ItemType Directory -Force -Path $backupRoot | Out-Null
-      & robocopy $target $backup /E /NFL /NDL /NJH /NJS | Out-Null
+      & robocopy $target $backup /E /XD icons logs /NFL /NDL /NJH /NJS | Out-Null
       if ($LASTEXITCODE -ge 8) { throw "Could not back up the existing plugin (robocopy $LASTEXITCODE)." }
       Say "  Backed up the existing copy to $backup"
     }
@@ -140,7 +140,8 @@ try {
     Say '        top row:     11  12  13  14  15'
     Say '        middle row:   6   7   8   9  10'
     Say '        bottom row:   1   2   3   4   5     (Dock Key 1 is bottom-left)'
-    Say '  4. In World of Warcraft install the StreonorDock addon, then /reload once so the keys show your icons.'
+    Say '  4. In World of Warcraft install the StreonorDock addon, then /reload once.'
+    Say '  5. For real icons on the keys run "Build Icon Library.bat" (optional; without it the keys show the spell name).'
   }
   Finish 0
 } catch {

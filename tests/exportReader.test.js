@@ -8,7 +8,8 @@ test('schema-2 fixture: icons, unresolved and empty entries',async()=>{
  a.equal(s.schema,2);a.equal(s.enabled,true);a.equal(s.profileId,'opaque-fixture');a.equal(s.page,2);
  a.equal(s.icons[1],136096);a.equal(s.icons[2],134829);a.equal(s.icons[3],'unresolved');
  for(let i=4;i<=15;i++)a.equal(s.icons[i],undefined);
- a.deepEqual(Object.keys(s).sort(),['enabled','icons','mtimeMs','page','profileId','schema']);   // no telemetry survives
+ a.deepEqual(Object.keys(s).sort(),['enabled','icons','mtimeMs','names','page','profileId','schema']);   // no telemetry survives
+ a.equal(s.names[1],'Rejuvenation');a.equal(s.names[3],undefined);a.equal(s.names[2],undefined);a.equal(s.names[4],undefined);
 });
 test('schema-1 fixture (transitional): icons only, everything else ignored',async()=>{
  const r=new ExportReader({savedVariablesPath:fixture1}); await r.poll();const s=r.view();

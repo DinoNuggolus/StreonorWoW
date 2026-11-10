@@ -14,6 +14,8 @@ async function main(){
  for(const k of ['savedVariablesPath','gamePath','iconDir','gameProcess'])if(typeof config[k]!=='string'||config[k].length>4096)delete config[k];
  if(config.iconDir&&!path.isAbsolute(config.iconDir))config.iconDir=path.resolve(__dirname,'..',config.iconDir);
  config.iconFallbackDirs=Array.isArray(config.iconFallbackDirs)?config.iconFallbackDirs.filter(d=>typeof d==='string'&&d&&d.length<=4096).slice(0,4).map(d=>path.isAbsolute(d)?d:path.resolve(__dirname,'..',d)):[];
+ // The icon builder writes here (outside the plugin folder, so updates and the installer never touch it).
+ if(process.env.LOCALAPPDATA&&config.iconFallbackDirs.length<8)config.iconFallbackDirs.push(path.join(process.env.LOCALAPPDATA,'StreonorDock','icons'));
  if(config.gameProcess&&!/^[a-zA-Z0-9_.-]+(?:\.exe)?$/.test(config.gameProcess))delete config.gameProcess;
  const reader=new ExportReader(config),icons=new IconResolver(config,[],e=>log('iconSkipped',e)),contexts=new Map(),held=new Set();let timer=null,busy=false,stopping=false,lastError='';
  let pressId=0;const heldIds=new Map(),fireOn=config.fireOn==='release'?'release':'press';

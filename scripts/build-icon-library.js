@@ -15,9 +15,9 @@ const { Worker, isMainThread, parentPort, workerData } = require('node:worker_th
 const { shrink, shrinkPalette } = require('./png');
 
 const ROOT = path.join(__dirname, '..');
-const DEFAULTS = {
-  pack: 'G:\\WoWFOREVER_ADDONS\\_staging\\icon-pack\\png\\png_icons',
-  listfile: 'G:\\WoWFOREVER_ADDONS\\_staging\\listfile\\community-listfile.csv',
+const DEFAULTS = {   // no machine paths: the pack and listfile must be given with --pack / --listfile
+  pack: null,
+  listfile: null,
   library: path.join(ROOT, 'icon-library'),
   library144: path.join(ROOT, 'icon-library-144'),
 };
@@ -137,6 +137,7 @@ function parseArgs(argv) {
 
 async function main(argv) {
   const o = parseArgs(argv), size = o.size || 72, opts = { size, pack: o.pack || DEFAULTS.pack, listfile: o.listfile || DEFAULTS.listfile, library: o.library || (size >= 144 ? DEFAULTS.library144 : DEFAULTS.library), workers: o.workers, force: o.force, log: console.log };
+  if (!opts.pack || !opts.listfile) throw new Error('--pack <folder with the .png files> and --listfile <community-listfile.csv> are required');
   console.log('pack    :', opts.pack, '(read-only)\nlistfile:', opts.listfile, '\nlibrary :', opts.library);
   const t0 = Date.now(), r = await build(opts);
   console.log(`pack icons ${r.packIcons}: with an ID ${r.packIconsWithId}, WITHOUT an ID ${r.packNoId.length}`);

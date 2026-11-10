@@ -23,10 +23,14 @@ New-Item -ItemType Directory -Force -Path $top | Out-Null
 try {
   & robocopy $pluginSrc (Join-Path $top $id) /E /XD logs icons /XF config.local.json *.previous *.log /NFL /NDL /NJH /NJS | Out-Null
   if ($LASTEXITCODE -ge 8) { throw "robocopy failed ($LASTEXITCODE)" }
-  foreach ($f in 'Install-StreonorDock.ps1', 'Install StreonorDock Plugin.bat', 'Uninstall StreonorDock Plugin.bat') {
+  foreach ($f in 'Install-StreonorDock.ps1', 'Install StreonorDock Plugin.bat', 'Uninstall StreonorDock Plugin.bat', 'Build-IconLibrary.ps1', 'Build Icon Library.bat') {
     Copy-Item -LiteralPath (Join-Path $root "installer\$f") -Destination $top
   }
   Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination $top
+  # The local icon builder (it downloads the community icon pack to the user's PC; no game art is shipped).
+  $tools = Join-Path $top 'tools'
+  New-Item -ItemType Directory -Force -Path $tools | Out-Null
+  Copy-Item -LiteralPath (Join-Path $root 'scripts\build-icon-library.js'), (Join-Path $root 'scripts\png.js') -Destination $tools
   @"
 StreonorDock plugin $version for Streonor (HotSpot StreamDock)
 
@@ -37,11 +41,13 @@ StreonorDock plugin $version for Streonor (HotSpot StreamDock)
        top row:     11  12  13  14  15
        middle row:   6   7   8   9  10
        bottom row:   1   2   3   4   5     (Dock Key 1 is bottom-left)
-4. Install the StreonorDock addon in World of Warcraft (see its README) and /reload once.
+4. Optional but needed for real icons: double-click "Build Icon Library.bat". It asks first, then downloads the community
+   icon pack (about 1.7 GB) from its original source to your PC and builds the key images. Without it the keys show the
+   spell/item NAME on a coloured tile instead of its icon.
+5. Install the StreonorDock addon in World of Warcraft (see its README) and /reload once.
 
 To remove the plugin: double-click "Uninstall StreonorDock Plugin.bat". Your Streonor profiles are never changed.
-Optional: put your own icon images (named <iconFileID>.png, 144x144) into the plugin's icons folder to show real spell
-icons on the keys; without them assigned keys show a question mark.
+Full step-by-step guide: https://github.com/DinoNuggolus/StreonorWoW/blob/main/docs/INSTALL.md
 "@ | Set-Content -LiteralPath (Join-Path $top 'README.txt') -Encoding ASCII
 
   New-Item -ItemType Directory -Force -Path $OutDir | Out-Null

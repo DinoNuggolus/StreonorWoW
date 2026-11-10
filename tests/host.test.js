@@ -33,7 +33,7 @@ test('schema 2: 15 keys render icon / question glyph / blank; obsolete actions a
  a.ok(!host.messages.some(m=>m.event==='setImage'&&String(m.context).startsWith('OLD_')),'obsolete actions never get an image');
  for(const old of ['readout1','status']){host.send({event:'keyDown',action:`io.github.dinonuggolus.streonordock.${old}`,context:'OLD_'+old,payload:{}});host.send({event:'keyUp',context:'OLD_'+old,payload:{}});host.send({event:'willDisappear',context:'OLD_'+old,payload:{}});}
  await sleep(500);a.equal(h.chords(),0);
- await fs.writeFile(h.file,h.fixture.replace('{ ["iconFileID"] = 136096 }','{}'));   // /reload: slot 1 emptied
+ await fs.writeFile(h.file,h.fixture.replace('{ ["iconFileID"] = 136096, ["name"] = "Rejuvenation" }','{}'));   // /reload: slot 1 emptied
  await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&!/<image|<path/.test(img(m)));
  await fs.writeFile(h.file,'broken fixture');
  await host.wait(m=>m.event==='setImage'&&m.context==='K1'&&!/<image|<path/.test(img(m)));

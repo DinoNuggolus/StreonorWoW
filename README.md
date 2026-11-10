@@ -7,9 +7,11 @@ Turns a Streonor S15 into 15 fixed World of Warcraft: Forever action keys: each 
 <https://github.com/DinoNuggolus/Stream-Controller-Actionbar-for-Streonor-Dock>
 
 Each tile is a 144x144 icon filling the whole key: no text, count, timer or border. Empty slot = black. Assigned but
-icon not known (or no icon file) = a question mark.
+the icon file is not available (yet) = a coloured tile with the spell/item/macro name; no name either = a question mark.
 
 ## Install (no commands needed)
+
+**Full step-by-step guide from a blank PC to working keys: [docs/INSTALL.md](docs/INSTALL.md).**
 
 1. Download `StreonorDock-Plugin-<version>.zip` from this repo's **Releases** page and extract the whole zip to a folder.
 2. Double-click **Install StreonorDock Plugin.bat**. It asks before closing Streonor and before starting it again, backs up
@@ -35,17 +37,22 @@ icon not known (or no icon file) = a question mark.
 
 ## Icons
 
-The plugin shows icons from image files named `<iconFileID>.png` (144x144, up to ~20 KB each) in the `icons` folder inside
-the installed plugin folder (`%APPDATA%\HotSpot\StreamDock\plugins\io.github.dinonuggolus.streonordock.sdPlugin\icons`).
-The release does **not** include game artwork. Without icon files every assigned key shows a question mark (chords still
-work). The installer and updates never touch your `icons` folder. Point `iconDir` in `plugin\config.local.json` somewhere
-else if you keep a library elsewhere.
+Every key shows the icon of its slot. The release does **not** include game artwork. Until an icon library exists, each
+assigned key shows the spell/item/macro **name on a coloured tile**, so the keys are usable right away.
+
+To get the real icons double-click **Build Icon Library.bat** (in the extracted release folder). It shows what it will do
+and asks first, then downloads the community icon pack (about 1.7 GB, `qcy-hash/wow-forever-icons-png`) and the community
+listfile (about 150 MB, `wowdev/wow-listfile`) from their original sources to your PC, builds 144 px key images into
+`%LOCALAPPDATA%\StreonorDock\icons` (about 300 MB), and deletes the downloads. It checks disk space, can be stopped and
+started again (it resumes), and uses the Node.js that ships with Streonor. Restart Streonor afterwards. The plugin also reads
+an optional `icons` folder inside the plugin folder or any `iconDir` set in `plugin\config.local.json`.
 
 ## Troubleshooting
 
 * **Keys are black:** the addon must be installed and enabled; `/reload` once; `/sdock export` in game should report
   resolved icons. Check the plugin log `logs\streonordock.jsonl` in the plugin folder.
-* **Keys show question marks:** icon files are missing (see Icons).
+* **Keys show a name on a coloured tile:** the icon library is missing - run *Build Icon Library.bat* (see Icons).
+* **Keys show a question mark:** the addon has not exported a name or icon for that slot yet; `/reload` once.
 * **Plugin not listed in Streonor:** Streonor only reads plugins at start - quit it completely (tray icon > Exit) and start it again.
 * **"Running scripts is disabled" error:** use the `.bat` files; they start PowerShell with the needed switch for you.
 * **WoW not found:** the plugin looks for `World of Warcraft\_forever_` on every drive. If yours is elsewhere create
@@ -82,8 +89,8 @@ StreonorDockDB.export = {
   profileId = "opaque",      -- string
   page = 1,                  -- integer 1..10
   icons = {                  -- keys 1..15 (stable positions, never compacted)
-    { iconFileID = 136096 }, -- resolved icon
-    { unresolved = true },   -- assigned, icon not known yet: question-mark glyph
+    { iconFileID = 136096, name = "Rejuvenation" }, -- resolved icon (+ optional short name for the fallback tile)
+    { unresolved = true, name = "Linen Bandage" },  -- assigned, icon not known yet: name tile (no name: question mark)
     {},                      -- empty: blank
   },
 }
@@ -95,7 +102,7 @@ A transitional schema 1 export (`schema = 1`, `slots[i].iconFileID`) is read for
 
 ```
 src/io.github.dinonuggolus.streonordock.sdPlugin/   the plugin (manifest, plugin/, lib/, images/)
-installer/                                         double-click installer (.bat + PowerShell)
+installer/                                         double-click installer, uninstaller and icon builder (.bat + PowerShell)
 scripts/run-tests.ps1                              tests on Node 26 and the Node 20 bundled with Streonor
 scripts/deploy-plugin.ps1 -Name <id>.sdPlugin      one-way copy into Streonor's plugins folder (dev)
 scripts/build-release.ps1                          builds dist\StreonorDock-Plugin-<version>.zip
@@ -105,8 +112,9 @@ scripts/build-release.ps1                          builds dist\StreonorDock-Plug
   plugin folder, installer scripts, README.txt and LICENSE - no tests, logs, icon libraries or game art).
 * Tests use authored fixtures and temp folders, never read game files, never call SendInput, and never touch the real
   Streonor plugins folder. `STREONORDOCK_CONFIG` overrides the config path; `STREONORDOCK_DRY_RUN=1` runs the sender in dry-run.
-* `scripts/build-icon-library.js`, `build-icon-cache.js`, `check-icons.js` are optional helpers for building your own
-  local icon folders from artwork you are allowed to use. **Never commit or publish game artwork** (`.gitignore` blocks
+* `scripts/build-icon-library.js` (shipped in the release as `tools/`) builds the 144 px icon library from a pack folder and a
+  listfile (`--pack`, `--listfile`, `--library`, `--size 144`); `installer/Build-IconLibrary.ps1` wraps it with download,
+  resume, disk checks and cleanup. `build-icon-cache.js` and `check-icons.js` are optional dev helpers. **Never commit or publish game artwork** (`.gitignore` blocks
   image types, `icon-*` folders and `dist/`).
 * Layout: `lib/exportReader.js` (locate/read/validate the export), `lib/icons.js` (lookup, validation, size cap),
   `lib/render.js` (full-bleed tile), `lib/chords.js` (chord plans), `lib/gamePath.js` (install detection),
